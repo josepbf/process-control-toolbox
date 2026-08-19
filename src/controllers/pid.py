@@ -128,3 +128,83 @@ class PIDController(Controller):
             "Ti": self.Ti,
             "Td": self.Td,
         }
+
+
+class VelocityPIDController(Controller):
+    """Incremental ("velocity") PID: computes the *change* in output.
+
+        du_k = Kc * [ (e_k - e_{k-1}) + (dt/Ti)*e_k - Td*(filtered dy/dt term) ]
+        u_k  = clip(u_{k-1} + du_k)
+
+    This is the form most DCS and PLC function blocks actually implement, for
+    two practical reasons:
+
+    * **Windup is structurally limited.** There is no integral state to run
+      away: the integral lives in ``u_{k-1}``, which is clipped every sample,
+      so the controller can never accumulate a demand the actuator cannot
+      deliver. Anti-windup is a property of the form rather than a bolt-on.
+    * **Bumpless transfer is free.** On switching from manual to automatic the
+      controller starts from whatever the operator left the valve at, because
+      it only ever adds increments to the current position.
+
+    The trade-off: derivative action is more noise-sensitive in this form
+    (it becomes a second difference), and a P-only velocity controller is not
+    possible -- without an integral term the output would drift.
+    """
+
+    def __init__(
+        self,
+        Kc: float,
+        Ti: float,
+        Td: float = 0.0,
+        dt: float = 1.0,
+        u_min: float = -np.inf,
+        u_max: float = np.inf,
+        N: float = 10.0,
+        u0: float = 0.0,
+        name: str = "velocity PID",
+        tuning_note: str = "unspecified",
+    ):
+        if Ti is None or Ti <= 0:
+            raise ValueError("the velocity form requires integral action")
+        self.Kc, self.Ti, self.Td = float(Kc), float(Ti), float(Td)
+        self.dt, self.N = float(dt), float(N)
+        self.u_min, self.u_max = float(u_min), float(u_max)
+        self.u0 = float(u0)
+        self.name = name
+        self.tuning_note = tuning_note
+        self.reset()
+
+    def reset(self) -> None:
+        self._u = float(np.clip(self.u0, self.u_min, self.u_max))
+        self._e_prev = None
+        self._y_prev = None
+        self._deriv = 0.0
+
+    def compute(self, y: np.ndarray, setpoint: np.ndarray, t: float) -> np.ndarray:
+        y0 = float(np.atleast_1d(y)[0])
+        sp = float(np.atleast_1d(setpoint)[0])
+        e = sp - y0
+
+        if self._e_prev is None:
+            self._e_prev, self._y_prev = e, y0
+            return np.array([self._u])
+
+        du = self.Kc * ((e - self._e_prev) + (self.dt / self.Ti) * e)
+
+        if self.Td > 0:
+            a = self.Td / (self.Td + self.N * self.dt)
+            b = self.Kc * self.Td * self.N / (self.Td + self.N * self.dt)
+            deriv = a * self._deriv - b * (y0 - self._y_prev)
+            du += deriv - self._deriv          # increment of the derivative term
+            self._deriv = deriv
+
+        self._u = float(np.clip(self._u + du, self.u_min, self.u_max))
+        self._e_prev, self._y_prev = e, y0
+        return np.array([self._u])
+
+    def describe(self) -> dict:
+        return {
+            "controller": self.name, "tuning": self.tuning_note,
+            "Kc": self.Kc, "Ti": self.Ti, "Td": self.Td, "form": "velocity",
+        }

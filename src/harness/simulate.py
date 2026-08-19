@@ -68,6 +68,12 @@ def simulate(
     y = plant.reset(seed=seed)
     controller.reset()
 
+    # Feedforward controllers read a measured disturbance. Its measurement
+    # noise gets its own RNG stream, so switching feedforward on or off cannot
+    # change the measurement-noise realisation seen on y.
+    uses_d = getattr(controller, "uses_measured_disturbance", False)
+    rng_d = np.random.default_rng(seed + 104729)
+
     rows = []
     u = np.zeros(plant.n_inputs)
     for k in range(scenario.n_steps):
@@ -75,8 +81,16 @@ def simulate(
         sp = np.atleast_1d(scenario.setpoint(t))
         d = np.atleast_1d(scenario.disturbance(t))
 
+        d_meas = d.copy()
+        if scenario.d_noise_std > 0:
+            d_meas = d_meas + rng_d.normal(0.0, scenario.d_noise_std, size=d.shape)
+
         t0 = perf_counter()
-        u = np.atleast_1d(np.asarray(controller.compute(y, sp, t), dtype=float))
+        if uses_d:
+            u = controller.compute(y, sp, t, d=d_meas)
+        else:
+            u = controller.compute(y, sp, t)
+        u = np.atleast_1d(np.asarray(u, dtype=float))
         solve_time = perf_counter() - t0
 
         mag, flag = _violation(y, plant.y_min, plant.y_max)
@@ -87,6 +101,7 @@ def simulate(
                 **_row("sp", sp),
                 **_row("u", u),
                 **_row("d", d),
+                **_row("d_meas", d_meas),
                 "violation": mag,
                 "violated": flag,
                 "solve_time": solve_time,
@@ -104,6 +119,7 @@ def simulate(
             **_row("sp", np.atleast_1d(scenario.setpoint(t))),
             **_row("u", u),
             **_row("d", np.atleast_1d(scenario.disturbance(t))),
+            **_row("d_meas", np.atleast_1d(scenario.disturbance(t))),
             "violation": mag,
             "violated": flag,
             "solve_time": np.nan,
@@ -120,6 +136,7 @@ def simulate(
             "scenario": scenario.name,
             "dt": dt,
             "seed": seed,
+            "uses_measured_disturbance": uses_d,
             "u_min": plant.u_min.tolist(),
             "u_max": plant.u_max.tolist(),
             "y_min": None if plant.y_min is None else plant.y_min.tolist(),

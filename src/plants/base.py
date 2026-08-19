@@ -52,6 +52,9 @@ class Plant(ABC):
         u_max,
         x0,
         dead_time=0.0,
+        n_disturbances: int = 1,
+        d_dead_time=0.0,
+        y_dead_time=0.0,
         noise_std=0.0,
         y_min=None,
         y_max=None,
@@ -75,6 +78,27 @@ class Plant(ABC):
         if np.any(self.dead_time < 0):
             raise ValueError("dead_time must be non-negative")
 
+        # Transport delay on the *disturbance* path, which is generally not the
+        # same as the delay on the manipulated path. The difference is what
+        # decides whether feedforward compensation is realisable at all: the
+        # disturbance must reach the output later than the valve does, or no
+        # compensator can act in time. (Feed moisture measured on a belt and
+        # arriving at the mill a minute later is the friendly case; a demand
+        # change that hits the process before the valve can respond is not.)
+        self.n_disturbances = int(n_disturbances)
+        self.d_dead_time = _as_array(d_dead_time, self.n_disturbances, "d_dead_time")
+        if np.any(self.d_dead_time < 0):
+            raise ValueError("d_dead_time must be non-negative")
+
+        # Measurement dead time, per output. Distinct from process dead time and
+        # every bit as damaging: a thermowell, a chromatograph or an XRF
+        # analyser reports what the process was doing minutes ago. It is also
+        # what makes cascade control worth its extra transmitter -- the fast
+        # secondary measurement is usually the *undelayed* one.
+        self.y_dead_time = _as_array(y_dead_time, self.n_outputs, "y_dead_time")
+        if np.any(self.y_dead_time < 0):
+            raise ValueError("y_dead_time must be non-negative")
+
         self.noise_std = _as_array(noise_std, self.n_outputs, "noise_std")
 
         # Output limits are *reporting only* in phase 1: the plant does not
@@ -96,6 +120,8 @@ class Plant(ABC):
 
         self._dt: float | None = None
         self._u_buffer: deque | None = None
+        self._d_buffer: deque | None = None
+        self._y_buffer: deque | None = None
         self.rng = np.random.default_rng(self.seed)
         self.x = self.x0.copy()
         self.t = 0.0
@@ -131,6 +157,8 @@ class Plant(ABC):
         self.rng = np.random.default_rng(self.seed if seed is None else int(seed))
         self._dt = None
         self._u_buffer = None
+        self._d_buffer = None
+        self._y_buffer = None
         return self.measure()
 
     def measure(self) -> np.ndarray:
@@ -150,6 +178,20 @@ class Plant(ABC):
         self._u_buffer = deque(
             [self.u_init.copy() for _ in range(int(n_delay.max()) + 1)],
             maxlen=int(n_delay.max()) + 1,
+        )
+        n_delay_y = np.round(self.y_dead_time / dt).astype(int)
+        self._y_delay_samples = n_delay_y
+        y_now = np.atleast_1d(self.output(self.x)).astype(float)
+        self._y_buffer = deque(
+            [y_now.copy() for _ in range(int(n_delay_y.max()) + 1)],
+            maxlen=int(n_delay_y.max()) + 1,
+        )
+
+        n_delay_d = np.round(self.d_dead_time / dt).astype(int)
+        self._d_delay_samples = n_delay_d
+        self._d_buffer = deque(
+            [np.zeros(self.n_disturbances) for _ in range(int(n_delay_d.max()) + 1)],
+            maxlen=int(n_delay_d.max()) + 1,
         )
         self._dt = float(dt)
 
@@ -174,7 +216,15 @@ class Plant(ABC):
         """
         u_sat = self.saturate(u)
         u_eff = self._delayed_input(u_sat, dt)
-        d_vec = np.zeros(1) if d is None else np.atleast_1d(np.asarray(d, float))
+
+        d_vec = np.zeros(self.n_disturbances) if d is None else np.atleast_1d(np.asarray(d, float))
+        if d_vec.size < self.n_disturbances:
+            d_vec = np.pad(d_vec, (0, self.n_disturbances - d_vec.size))
+        if np.any(self._d_delay_samples > 0):
+            self._d_buffer.append(d_vec.copy())
+            d_vec = np.array(
+                [self._d_buffer[-1 - int(n)][i] for i, n in enumerate(self._d_delay_samples)]
+            )
 
         h = dt / self.n_substeps
         x = self.x
@@ -186,7 +236,14 @@ class Plant(ABC):
             x = x + (h / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
         self.x = x
         self.t += dt
-        return self.measure()
+
+        y_now = self.measure()
+        if np.any(self._y_delay_samples > 0):
+            self._y_buffer.append(y_now)
+            y_now = np.array(
+                [self._y_buffer[-1 - int(n)][i] for i, n in enumerate(self._y_delay_samples)]
+            )
+        return y_now
 
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         return f"{type(self).__name__}(n_states={self.n_states}, dead_time={self.dead_time})"

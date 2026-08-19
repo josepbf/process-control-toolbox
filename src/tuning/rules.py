@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 
+import numpy as np
+
 
 @dataclass
 class PIDTuning:
@@ -284,13 +286,18 @@ def averaging_level_pi(k_prime: float, v_max: float, y_max_dev: float) -> PIDTun
     right design is the loosest proportional gain that still keeps the level
     inside its alarm band for the largest expected flow upset ``v_max``:
 
-        Kc = v_max / y_max_dev
+        Kc = sign(k') * v_max / y_max_dev
+
+    ``v_max`` is the largest expected flow upset expressed in *valve-equivalent*
+    units, and the sign of ``k'`` sets the controller action: a loop where the
+    manipulated variable is the tank *outflow* is reverse acting, so its gain is
+    negative.
 
     (Skogestad 2003, section on averaging level control; the same reasoning
     appears in Buckley's 1964 book as 'averaging level control'.)
     """
     return PIDTuning(
-        Kc=v_max / y_max_dev,
+        Kc=np.sign(k_prime) * v_max / y_max_dev,
         Ti=None,
         Td=0.0,
         rule=f"averaging level P-only, |dev| <= {y_max_dev:g} for upset {v_max:g}",

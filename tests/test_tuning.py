@@ -75,3 +75,98 @@ def test_imc_pi_keeps_ti_at_the_pade_corrected_lag():
 def test_unknown_zn_variant_raises():
     with pytest.raises(ValueError):
         ziegler_nichols_open_loop(K=1.0, tau=1.0, theta=1.0, kind="PIDD")
+
+
+# ----------------------------------------------------------------------
+# the wider rule ladder
+# ----------------------------------------------------------------------
+from src.tuning.rules import (  # noqa: E402
+    amigo_pi,
+    amigo_pid,
+    averaging_level_pi,
+    cohen_coon,
+    half_rule,
+    lambda_tuning,
+    simc_integrating,
+    tyreus_luyben,
+    ziegler_nichols_closed_loop,
+)
+
+
+def test_zn_closed_loop_values():
+    t = ziegler_nichols_closed_loop(Ku=4.0, Pu=60.0, kind="PID")
+    assert t.Kc == pytest.approx(2.4)
+    assert t.Ti == pytest.approx(30.0)
+    assert t.Td == pytest.approx(7.5)
+
+
+def test_tyreus_luyben_is_gentler_than_ziegler_nichols():
+    """Its whole purpose: the same experiment, a far more conservative taste."""
+    Ku, Pu = 4.0, 60.0
+    tl = tyreus_luyben(Ku, Pu, kind="PI")
+    zn = ziegler_nichols_closed_loop(Ku, Pu, kind="PI")
+    assert tl.Kc < zn.Kc
+    assert tl.Ti > zn.Ti
+
+
+def test_cohen_coon_gets_relatively_gentler_as_dead_time_grows():
+    """CC was derived for dead-time-dominant processes; relative to the
+    lag-dominant case its gain should not blow up the way ZN's does."""
+    lag_dominant = dict(K=1.0, tau=100.0, theta=5.0)
+    dt_dominant = dict(K=1.0, tau=10.0, theta=20.0)
+    from src.tuning.rules import ziegler_nichols_open_loop as zn
+
+    assert cohen_coon(**lag_dominant).Kc / zn(**lag_dominant).Kc > 1.0
+    assert cohen_coon(**dt_dominant).Kc / zn(**dt_dominant).Kc < 1.4
+
+
+def test_lambda_tuning_cancels_the_process_lag():
+    t = lambda_tuning(K=2.0, tau=40.0, theta=5.0, lam=40.0)
+    assert t.Ti == pytest.approx(40.0)               # Ti = tau exactly, no cap
+    assert t.Kc == pytest.approx(40.0 / (2.0 * 45.0))
+
+
+def test_lambda_tuning_is_slower_for_larger_lambda():
+    fast = lambda_tuning(K=1.0, tau=60.0, theta=15.0, lam=45.0)
+    slow = lambda_tuning(K=1.0, tau=60.0, theta=15.0, lam=200.0)
+    assert slow.Kc < fast.Kc
+
+
+def test_amigo_is_conservative_relative_to_ziegler_nichols():
+    from src.tuning.rules import ziegler_nichols_open_loop as zn
+
+    args = dict(K=1.5, tau=60.0, theta=15.0)
+    assert amigo_pi(**args).Kc < zn(**args, kind="PI").Kc
+    assert amigo_pid(**args).Td > 0.0
+
+
+def test_simc_integrating_has_no_process_lag_to_cancel():
+    """Ti comes only from tau_c and theta -- there is no tau in an integrator."""
+    t = simc_integrating(k_prime=0.01, theta=10.0, tau_c=10.0)
+    assert t.Kc == pytest.approx(1.0 / (0.01 * 20.0))
+    assert t.Ti == pytest.approx(80.0)
+
+
+def test_averaging_level_gain_is_set_by_the_allowed_excursion():
+    t = averaging_level_pi(k_prime=0.02, v_max=20.0, y_max_dev=25.0)
+    assert t.Kc == pytest.approx(0.8)
+    assert t.Ti is None                              # P-only, on purpose
+
+
+def test_half_rule_splits_the_largest_neglected_lag():
+    # Three lags 100, 20, 5 with 3 s of dead time:
+    #   tau_eff   = 100 + 20/2                = 110
+    #   theta_eff = 3 + 20/2 + 5              = 18
+    tau_eff, theta_eff = half_rule([100.0, 20.0, 5.0], theta=3.0)
+    assert tau_eff == pytest.approx(110.0)
+    assert theta_eff == pytest.approx(18.0)
+
+
+def test_half_rule_sends_inverse_response_and_sampling_into_the_dead_time():
+    tau_eff, theta_eff = half_rule([50.0], theta=0.0, inverse_zeros=[4.0], dt=2.0)
+    assert tau_eff == pytest.approx(50.0)
+    assert theta_eff == pytest.approx(5.0)           # 4 + 2/2
+
+
+def test_half_rule_on_a_single_lag_is_the_identity():
+    assert half_rule([30.0], theta=6.0) == (30.0, 6.0)

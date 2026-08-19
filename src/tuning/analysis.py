@@ -127,7 +127,9 @@ def pid_on_integrator(
     k_prime: float, theta: float, Kc: float, Ti: float | None, Td: float = 0.0, N: float = 10.0
 ) -> dict:
     """Robustness of a PID tuning on an integrating plant."""
-    w = _frequency_grid(theta, Ti, Td, 1.0 / max(k_prime, 1e-12))
+    # 1/|k'| is the natural time scale of an integrator; the sign only sets
+    # the controller action (a reverse-acting loop has k' and Kc both negative).
+    w = _frequency_grid(theta, Ti, Td, 1.0 / max(abs(k_prime), 1e-12))
     return loop_metrics(integrator_response(k_prime, theta, w), pid_response(Kc, Ti, Td, N, w), w)
 
 

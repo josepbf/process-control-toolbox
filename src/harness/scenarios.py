@@ -61,6 +61,11 @@ class Scenario:
     setpoint: Callable[[float], np.ndarray]
     disturbance: Callable[[float], np.ndarray] = field(default_factory=lambda: constant(0.0))
     seed: int = 0
+    #: Noise on the *measurement* of the disturbance, for feedforward
+    #: controllers. Zero means a perfectly measured disturbance, which is an
+    #: idealised upper bound on what feedforward can do and should be labelled
+    #: as such when reported.
+    d_noise_std: float = 0.0
     description: str = ""
     #: Named time windows for reporting metrics separately, e.g. the setpoint
     #: change and the load disturbance judged on their own terms.
