@@ -1,0 +1,15 @@
+# Phase 1 (harness, plants, classical controllers). Python 3.11+.
+#
+# Later phases add, as they are reached:
+#   cvxpy, osqp            -- phase 2, linear MPC as a QP
+#   casadi, do-mpc         -- phase 5, nonlinear MPC
+#   sippy or sysidentpy    -- phase 4, system identification
+#   control, simple-pid    -- cross-checks against reference implementations
+# They are deliberately not installed yet: nothing in phase 1 should depend on
+# a solver, and the hand-built MPC of phase 2 is the point of the exercise.
+
+numpy==2.5.2
+scipy==1.18.0
+matplotlib==3.11.1
+pandas==3.0.5
+pytest==9.1.1
