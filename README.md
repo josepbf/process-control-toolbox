@@ -13,6 +13,21 @@ library. Implementations are explicit and readable in preference to clever.
 controllers, thirteen tuning rules with frequency-domain robustness analysis,
 relay auto-tuning, and nine reproducible experiments. Phase 2 (linear MPC by hand) not started.
 
+## Documentation
+
+Full documentation — tutorials, concepts, articles on every experiment, and a
+generated API reference — is at
+**[josepbf.github.io/process-control-toolbox](https://josepbf.github.io/process-control-toolbox/)**,
+and as plain Markdown in [`docs/`](docs/).
+
+| | |
+|---|---|
+| [Getting started](docs/getting-started.md) | install, run an experiment, read the output |
+| [Tutorials](docs/tutorials/index.md) | build a loop, tune it, write your own plant or controller |
+| [Concepts](docs/concepts/index.md) | architecture, fairness rules, dead time, metrics, robustness |
+| [Articles](docs/articles/index.md) | one narrative write-up per experiment |
+| [Glossary](docs/glossary.md) | the process-control vocabulary used here |
+
 ## Setup
 
 ```bash
@@ -38,19 +53,20 @@ for f in experiments/exp*.py; do .venv/bin/python "$f"; done
 .venv/bin/python -m pytest -q
 ```
 
-Findings are recorded in [FINDINGS.md](FINDINGS.md).
+Findings are recorded in [FINDINGS.md](FINDINGS.md), and written up at
+length in the [articles](docs/articles/index.md).
 
-| script | headline result |
-|---|---|
-| `exp01_onoff_vs_pid.py` | ON/OFF limit-cycles at ±18 % with a period of ~4θ; SIMC PI settles without offset; SIMC vs Ziegler–Nichols is a tracking-vs-effort trade |
-| `exp02_antiwindup.py` | integral windup on an infeasible setpoint: back-calculation is worth **16×** on recovery IAE, from a structural fix rather than tuning |
-| `exp03_tuning_shootout.py` | ten published PI rules scored on performance **and** maximum sensitivity Ms; picks the fair PID baseline on stated grounds (SIMC at the knee, Ms 1.59) |
-| `exp04_relay_autotune.py` | the industrial autotune: the relay experiment recovers the ultimate period to +7 % and under-gains by 24 % — and errs safe |
-| `exp05_deadtime_sweep.py` | PI degradation vs θ/τ against the physical floor; usable loop gain falls 80× while the peak deviation approaches a limit no controller can beat |
-| `exp06_averaging_level.py` | surge tank: tight level control and averaging level control rank **opposite** depending on which metric is the objective |
-| `exp07_cascade.py` | cascade is **7.7×** better on the disturbance it was designed for, 0.9× (worse) on the one it was not, at 2.1× the valve travel |
-| `exp08_feedforward.py` | dynamic feedforward from a measured disturbance: **5.4×** on IAE, 16× on peak — and what a 30 % gain error or an unrealisable delay costs |
-| `exp09_inverse_response.py` | a right-half-plane zero: more gain deepens the wrong-way dip 8.6×, and costs the same as dead time |
+| script | headline result | article |
+|---|---|---|
+| `exp01_onoff_vs_pid.py` | ON/OFF limit-cycles at ±18 % with a period of ~4θ; SIMC PI settles without offset; SIMC vs Ziegler–Nichols is a tracking-vs-effort trade | [1](docs/articles/01-onoff-vs-pid.md) |
+| `exp02_antiwindup.py` | integral windup on an infeasible setpoint: back-calculation is worth **16×** on recovery IAE, from a structural fix rather than tuning | [2](docs/articles/02-integral-windup.md) |
+| `exp03_tuning_shootout.py` | ten published PI rules scored on performance **and** maximum sensitivity Ms; picks the fair PID baseline on stated grounds (SIMC at the knee, Ms 1.59) | [3](docs/articles/03-tuning-shootout.md) |
+| `exp04_relay_autotune.py` | the industrial autotune: the relay experiment recovers the ultimate period to +7 % and under-gains by 24 % — and errs safe | [4](docs/articles/04-relay-autotune.md) |
+| `exp05_deadtime_sweep.py` | PI degradation vs θ/τ against the physical floor; usable loop gain falls 80× while the peak deviation approaches a limit no controller can beat | [5](docs/articles/05-dead-time-sweep.md) |
+| `exp06_averaging_level.py` | surge tank: tight level control and averaging level control rank **opposite** depending on which metric is the objective | [6](docs/articles/06-averaging-level.md) |
+| `exp07_cascade.py` | cascade is **7.7×** better on the disturbance it was designed for, 0.9× (worse) on the one it was not, at 2.1× the valve travel | [7](docs/articles/07-cascade.md) |
+| `exp08_feedforward.py` | dynamic feedforward from a measured disturbance: **5.4×** on IAE, 16× on peak — and what a 30 % gain error or an unrealisable delay costs | [8](docs/articles/08-feedforward.md) |
+| `exp09_inverse_response.py` | a right-half-plane zero: more gain deepens the wrong-way dip 8.6×, and costs the same as dead time | [9](docs/articles/09-inverse-response.md) |
 
 ## Layout
 
@@ -84,6 +100,8 @@ src/
 experiments/              one script per reported result
 tests/                    pytest suite (119 tests)
 results/                  generated figures and CSVs (gitignored)
+docs/                     documentation site (MkDocs Material)
+tools/                    documentation asset build
 ```
 
 ### The three delay paths

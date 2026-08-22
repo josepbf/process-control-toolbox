@@ -1,0 +1,146 @@
+site_name: Process Control Toolbox
+site_description: >-
+  MPC built from scratch and benchmarked, fairly and quantitatively, against
+  the classical ladder — ON/OFF, PID, cascade, feedforward — on processes with
+  long dead time, hard actuator limits and non-minimum-phase dynamics.
+site_url: https://josepbf.github.io/process-control-toolbox/
+repo_url: https://github.com/josepbf/process-control-toolbox
+repo_name: josepbf/process-control-toolbox
+edit_uri: edit/main/docs/
+copyright: Documentation for the process-control-toolbox project.
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+    - search.suggest
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Follow system theme
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: numpy
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            members_order: source
+            separate_signature: true
+            signature_crossrefs: true
+            merge_init_into_class: true
+            filters: ["!^_"]
+            heading_level: 3
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tilde
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/josepbf/process-control-toolbox
+
+nav:
+  - Home:
+      - index.md
+      - getting-started.md
+      - glossary.md
+      - roadmap.md
+  - Tutorials:
+      - tutorials/index.md
+      - tutorials/01-your-first-loop.md
+      - tutorials/02-tuning-a-loop.md
+      - tutorials/03-relay-autotuning.md
+      - tutorials/04-writing-a-plant.md
+      - tutorials/05-writing-a-controller.md
+      - tutorials/06-designing-an-experiment.md
+  - Concepts:
+      - concepts/index.md
+      - concepts/architecture.md
+      - concepts/fairness.md
+      - concepts/dead-time.md
+      - concepts/metrics.md
+      - concepts/tuning-rules.md
+      - concepts/robustness.md
+  - Articles:
+      - articles/index.md
+      - articles/01-onoff-vs-pid.md
+      - articles/02-integral-windup.md
+      - articles/03-tuning-shootout.md
+      - articles/04-relay-autotune.md
+      - articles/05-dead-time-sweep.md
+      - articles/06-averaging-level.md
+      - articles/07-cascade.md
+      - articles/08-feedforward.md
+      - articles/09-inverse-response.md
+  - API reference:
+      - reference/index.md
+      - reference/plants.md
+      - reference/controllers.md
+      - reference/harness.md
+      - reference/tuning.md
