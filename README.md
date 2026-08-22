@@ -175,3 +175,4 @@ plant it destroys valves.
 | 4 | system identification (PRBS, ARX/subspace) and deliberate model mismatch sweeps | |
 | 5 | nonlinear: CSTR with NMPC, grinding circuit with recycle and long dead time, Smith predictor baseline | |
 | 6 | optional: MHE, offset-free MPC, RL contender | |
+
