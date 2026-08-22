@@ -93,7 +93,7 @@ as wear would swamp the comparison with something no plant operator would ever
 notice. `compute_metrics` sets `eps` to **0.5 % of the actuator span**.
 
 !!! quote "The effort column in one line"
-    Phase 1 record: cascade cost 2.1× the valve travel, feedforward 5.8×,
+    The record so far: cascade cost 2.1× the valve travel, feedforward 5.8×,
     aggressive tuning 5.7×. Every single improvement was paid for.
 
 ## Constraint
@@ -103,7 +103,7 @@ notice. `compute_metrics` sets `eps` to **0.5 % of the actuator span**.
 | `n_violations` | samples with the output outside its declared band |
 | `violation_integral` | $\int$ magnitude outside the band $dt$ |
 
-Output limits (`y_min`, `y_max`) are **reporting-only** in phase 1 — the plant
+Output limits (`y_min`, `y_max`) are **reporting-only** — the plant
 does not enforce them. They exist so the harness can count how often a
 controller drives the process past a limit it was supposed to respect. This is
 the column MPC is eventually going to be judged on, so it is instrumented from

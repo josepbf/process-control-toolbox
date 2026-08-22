@@ -77,6 +77,11 @@ class CascadeController(Controller):
         # Inner loop: closes on the secondary measurement, drives the actuator.
         return self.secondary.compute(y[1:2], np.array([sp_inner]), t)
 
+    def diagnostics(self) -> dict[str, float]:
+        """The inner setpoint is the outer loop's real output, and the signal
+        that makes a cascade legible on a plot."""
+        return {"inner_setpoint": float(self.inner_setpoint)}
+
     def describe(self) -> dict:
         return {
             "controller": self.name,

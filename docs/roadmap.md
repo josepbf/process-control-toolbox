@@ -1,29 +1,25 @@
 # Roadmap
 
-| phase | content | status |
+Organised by capability. Each item lands with the tuning method, the tests and
+the experiment that demonstrate it.
+
+| capability | content | status |
 |---|---|---|
-| 1 | harness, FOPDT tank, ON/OFF, PID, SIMC | :material-check-circle: done |
-| 1+ | integrating / high-order / inverse-response / cascade plants; cascade, feedforward, velocity-form and PWM controllers; thirteen tuning rules; Ms robustness analysis; relay auto-tuning | :material-check-circle: done |
-| 2 | linear MPC built by hand (prediction matrices → QP in CVXPY); unconstrained MPC must converge to LQR, as a unit test | :material-arrow-right-circle: next |
-| 3 | quadruple tank, RGA pairing, decentralised PID vs multivariable MPC, minimum and non-minimum phase | |
-| 4 | system identification (PRBS, ARX/subspace) and deliberate model mismatch sweeps | |
-| 5 | nonlinear: CSTR with NMPC, grinding circuit with recycle and long dead time, Smith predictor baseline | |
-| 6 | optional: MHE, offset-free MPC, RL contender | |
+| harness and metrics | closed-loop runner, scenarios, tracking/effort/constraint/computation metrics, plotting | :material-check-circle: done |
+| plants | FOPDT tank, integrating surge tank, series lags, inverse response, two-stage cascade | :material-check-circle: done |
+| controllers | ON/OFF, time-proportioning, PID (positional and velocity), cascade, feedforward | :material-check-circle: done |
+| tuning and analysis | thirteen named rules, half-rule reduction, M<sub>s</sub>/GM/PM analysis, relay auto-tuning | :material-check-circle: done |
+| **dead-time compensation** | Smith predictor and variants | :material-arrow-right-circle: next |
+| selector, ratio, split-range | the classical structural repertoire beyond cascade and feedforward | |
+| MIMO and interaction | quadruple tank, RGA pairing, decentralised control | |
+| model predictive control | *conditional* — see below | |
 
-## What phase 1 established, and what it obliges phase 2 to do
+System identification is deliberately out of scope for now.
 
-Phase 1 was not a warm-up. It was the construction of a set of expectations
-that phase 2 onward has to meet, and each one is a specific, falsifiable
-constraint on what a good MPC result will look like.
+## What the existing experiments oblige the next ones to do
 
-### The baseline is fixed, and it was fixed first
-
-**SIMC (τ_c = θ)**, with **AMIGO** as the robust alternative, chosen in
-[article 3](articles/03-tuning-shootout.md) on stated grounds before any MPC
-exists. Both appear in later comparisons.
-
-Any MPC result in this project is measured against those two, not against a
-Ziegler–Nichols loop showing 50 % overshoot.
+The results so far are not a warm-up. They set specific, falsifiable
+expectations that anything added later has to meet.
 
 ### Structure beats tuning, repeatedly
 
@@ -34,50 +30,57 @@ Ziegler–Nichols loop showing 50 % overshoot.
 | feedforward ([8](articles/08-feedforward.md)) | 5.4× |
 | *the entire spread of ten tuning rules* | *~4× on load IAE* |
 
-Every structural change is worth more than the whole tuning axis.
-
-!!! danger "So the question for MPC is not the obvious one"
-    Not *"can it beat a PID"* — but **"can it beat a well-structured classical
-    scheme"**: a cascade with feedforward, correct anti-windup, and a cited
-    tuning rule.
-
-    Phases 3–5 have to be set up that way, or the comparison is not worth
-    running.
+Every structural change is worth more than the whole tuning axis. Any new
+control strategy is therefore measured against a *well-structured* classical
+scheme — a cascade with feedforward, correct anti-windup, and a cited tuning
+rule — not against a bare PID, and certainly not against a Ziegler–Nichols
+loop showing 50 % overshoot.
 
 ### The peak deviation is mostly physics
 
 In the dead-time-dominant regime PI is already within **2 %** of the
 theoretical floor on peak deviation ([article 5](articles/05-dead-time-sweep.md)).
-MPC's opportunity is in the **recovery**, in **constraint handling**, and in
-**multivariable coordination** — not in the peak.
+The remaining headroom is in the **recovery**, in **constraint handling**, and
+in **multivariable coordination**.
 
-An MPC result claiming a large improvement in peak deviation at high θ/τ is a
+A result claiming a large improvement in peak deviation at high θ/τ is a
 result to be checked, not celebrated.
 
 ### Every improvement costs valve travel
 
 Cascade 2.1×, feedforward 5.8×, aggressive tuning 5.7×. No comparison is
-reported without the effort column, and MPC will not be exempt.
+reported without the effort column, and nothing added later is exempt.
 
-## Phase 2 in detail
+## Dead-time compensation, next
 
-Linear MPC, built by hand:
+The Smith predictor is the classical answer to the θ/τ degradation measured in
+[article 5](articles/05-dead-time-sweep.md), and it brings two utilities the
+toolbox does not yet have:
 
-1. **Prediction matrices** from a discrete state-space model — the $\Phi$ /
-   $\Gamma$ construction written out rather than called.
-2. **The QP**, assembled explicitly and handed to CVXPY/OSQP. Cost weights,
-   horizons, input and output constraints.
-3. **The unit test that matters**: unconstrained MPC with an infinite horizon
-   must converge to the LQR solution. If it does not, the prediction matrices
-   are wrong.
-4. **The scenario PID cannot win**: an *active output constraint*. Phase 1
-   established that on an unconstrained fast SISO loop there is nothing for
-   MPC to do ([article 1](articles/01-onoff-vs-pid.md)), so phase 2 has to
-   build the case where anticipating a limit is worth something.
-5. `solve_ms_mean` and `solve_ms_p95` in the table, in the column that has
-   been there since experiment 1.
+1. **A discrete internal model** — FOPDT to state space, discretisation, and
+   dead-time state augmentation.
+2. **A state observer** — `compute()` receives `y`, not `x`, so any model-based
+   law needs an estimate.
 
-The `src/identification/` package exists and is empty; it is phase 4's home.
+Both are prerequisites for anything model-based, which is why they arrive with
+the Smith predictor rather than later.
+
+## On model predictive control
+
+MPC is listed as conditional, and the condition is architectural: it is added
+if it fits the `Controller` abstraction rather than requiring the toolbox to be
+reshaped around it.
+
+It needs three things beyond the current interface — a state estimate, optional
+setpoint preview, and a way to publish predicted trajectories. Each is
+additive, each follows a pattern already working in the codebase, and the first
+two are independently required by the Smith predictor above. Output limits
+already exist on every plant as reporting-only bands with violation metrics, so
+constraint handling needs no new machinery.
+
+The extension contract is written up in
+[architecture](concepts/architecture.md) and in
+[`ARCHITECTURE.md`](https://github.com/josepbf/process-control-toolbox/blob/main/ARCHITECTURE.md).
 
 ## Contributing a result
 

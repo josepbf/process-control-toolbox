@@ -17,46 +17,46 @@ code.
 
 ## Base class
 
-::: src.controllers.base.Controller
+::: process_control.controllers.base.Controller
 
 ---
 
 ## OnOffController
 
-::: src.controllers.onoff.OnOffController
+::: process_control.controllers.onoff.OnOffController
 
 ---
 
 ## TimeProportioningController
 
-::: src.controllers.onoff.TimeProportioningController
+::: process_control.controllers.onoff.TimeProportioningController
 
 ---
 
 ## PIDController
 
-::: src.controllers.pid.PIDController
+::: process_control.controllers.pid.PIDController
 
 ---
 
 ## VelocityPIDController
 
-::: src.controllers.pid.VelocityPIDController
+::: process_control.controllers.pid.VelocityPIDController
 
 ---
 
 ## CascadeController
 
-::: src.controllers.cascade.CascadeController
+::: process_control.controllers.cascade.CascadeController
 
 ---
 
 ## FeedforwardPID
 
-::: src.controllers.feedforward.FeedforwardPID
+::: process_control.controllers.feedforward.FeedforwardPID
 
 ---
 
 ## LeadLag
 
-::: src.controllers.feedforward.LeadLag
+::: process_control.controllers.feedforward.LeadLag

@@ -13,7 +13,7 @@ it is the oldest identification experiment there is.
 
 ```python
 import numpy as np
-from src.plants.tank import Tank
+from process_control.plants.tank import Tank
 
 def open_loop_step(plant, u_before, u_after, t_step=50.0, dt=1.0, t_final=600.0):
     """Hold the valve steady, step it, and record the reaction curve."""
@@ -73,7 +73,7 @@ true      : {'K': 1.5, 'tau': 60.0,  'theta': 15.0}
 ## 3. Apply a rule
 
 ```python
-from src.tuning.rules import simc_pi
+from process_control.tuning.rules import simc_pi
 tuning = simc_pi(**model)
 ```
 
@@ -95,7 +95,7 @@ the PID" from "we tuned the PID well". Compute the
 [maximum sensitivity](../concepts/robustness.md) of the resulting loop.
 
 ```python
-from src.tuning.analysis import pid_on_fopdt
+from process_control.tuning.analysis import pid_on_fopdt
 
 for label, tuning in rules.items():
     on_model = pid_on_fopdt(**model,        Kc=tuning.Kc, Ti=tuning.Ti)
@@ -125,19 +125,19 @@ real process could have carried. That direction is luck rather than design —
 a fit that under-estimated θ would have moved every number the other way — but
 it is why the two-point method survives in the field.
 
-!!! warning "This is not a substitute for phase 4"
+!!! warning "This is not a substitute for a mismatch study"
     A single-step identification against a plant with the exact FOPDT
     structure being fitted is the friendliest possible case. Real model
     mismatch — wrong structure, drifting gain, operating-point dependence —
-    is what phase 4 exists to price.
+    is what a deliberate mismatch sweep exists to price.
 
 ## 5. Now close the loop
 
 ```python
-from src.controllers.pid import PIDController
-from src.harness.simulate import run_all
-from src.harness.metrics import summarize, format_table
-from src.harness.scenarios import setpoint_and_load
+from process_control.controllers.pid import PIDController
+from process_control.harness.simulate import run_all
+from process_control.harness.metrics import summarize, format_table
+from process_control.harness.scenarios import setpoint_and_load
 
 scenario = setpoint_and_load(dt=1.0, y_start=30.0, y_step=50.0, seed=7)
 controllers = {

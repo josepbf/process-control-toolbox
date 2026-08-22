@@ -7,7 +7,7 @@ of these functions, and the rule travels with the numbers it produced.
 Every rule returns a `PIDTuning` dataclass:
 
 ```python
-from src.tuning.rules import simc_pi
+from process_control.tuning.rules import simc_pi
 
 t = simc_pi(K=1.5, tau=60.0, theta=15.0)
 t.Kc, t.Ti, t.Td      # 1.333, 60.0, 0.0

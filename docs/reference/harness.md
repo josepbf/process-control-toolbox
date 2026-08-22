@@ -9,25 +9,25 @@ stream.
 
 ## Simulation
 
-::: src.harness.simulate.simulate
+::: process_control.harness.simulate.simulate
 
-::: src.harness.simulate.run_all
+::: process_control.harness.simulate.run_all
 
 ---
 
 ## Scenarios
 
-::: src.harness.scenarios.Scenario
+::: process_control.harness.scenarios.Scenario
 
-::: src.harness.scenarios.setpoint_and_load
+::: process_control.harness.scenarios.setpoint_and_load
 
 ### Signal builders
 
-::: src.harness.scenarios.constant
+::: process_control.harness.scenarios.constant
 
-::: src.harness.scenarios.staircase
+::: process_control.harness.scenarios.staircase
 
-::: src.harness.scenarios.pulse
+::: process_control.harness.scenarios.pulse
 
 ---
 
@@ -36,50 +36,50 @@ stream.
 See [Concepts → Metrics](../concepts/metrics.md) for what each number means
 and when it deliberately returns `NaN`.
 
-::: src.harness.metrics.compute_metrics
+::: process_control.harness.metrics.compute_metrics
 
-::: src.harness.metrics.summarize
+::: process_control.harness.metrics.summarize
 
-::: src.harness.metrics.format_table
+::: process_control.harness.metrics.format_table
 
 ### Tracking
 
-::: src.harness.metrics.iae
+::: process_control.harness.metrics.iae
 
-::: src.harness.metrics.ise
+::: process_control.harness.metrics.ise
 
-::: src.harness.metrics.itae
+::: process_control.harness.metrics.itae
 
-::: src.harness.metrics.settling_time
+::: process_control.harness.metrics.settling_time
 
-::: src.harness.metrics.overshoot
+::: process_control.harness.metrics.overshoot
 
-::: src.harness.metrics.peak_deviation
+::: process_control.harness.metrics.peak_deviation
 
-::: src.harness.metrics.steady_state_offset
+::: process_control.harness.metrics.steady_state_offset
 
-::: src.harness.metrics.noise_sigma
+::: process_control.harness.metrics.noise_sigma
 
 ### Control effort
 
-::: src.harness.metrics.total_variation
+::: process_control.harness.metrics.total_variation
 
-::: src.harness.metrics.max_move
+::: process_control.harness.metrics.max_move
 
-::: src.harness.metrics.reversals
+::: process_control.harness.metrics.reversals
 
 ### Signal access
 
-::: src.harness.metrics.signal
+::: process_control.harness.metrics.signal
 
 ---
 
 ## Plotting
 
-::: src.harness.plotting.plot_runs
+::: process_control.harness.plotting.plot_runs
 
-::: src.harness.plotting.plot_tradeoff
+::: process_control.harness.plotting.plot_tradeoff
 
-::: src.harness.plotting.plot_sweep
+::: process_control.harness.plotting.plot_sweep
 
-::: src.harness.plotting.save_table
+::: process_control.harness.plotting.save_table

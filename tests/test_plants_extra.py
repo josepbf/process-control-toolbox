@@ -4,12 +4,12 @@ inverse-response and cascade processes, plus the delay machinery they use."""
 import numpy as np
 import pytest
 
-from src.plants.base import Plant
-from src.plants.cascade_process import CascadeProcess
-from src.plants.integrating_tank import IntegratingTank
-from src.plants.inverse_response import InverseResponseTank
-from src.plants.series_tanks import SeriesTanks
-from src.plants.tank import Tank
+from process_control.plants.base import Plant
+from process_control.plants.cascade_process import CascadeProcess
+from process_control.plants.integrating_tank import IntegratingTank
+from process_control.plants.inverse_response import InverseResponseTank
+from process_control.plants.series_tanks import SeriesTanks
+from process_control.plants.tank import Tank
 
 
 def _run(plant, u, n, dt=1.0, d=0.0):

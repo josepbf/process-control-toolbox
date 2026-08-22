@@ -53,7 +53,7 @@ flowchart LR
 | disturbance | `d_dead_time` | when the upset reaches the output |
 | measurement | `y_dead_time` | analyser or thermowell reporting lag |
 
-Two results in phase 1 turn entirely on the relationship between them:
+Two results turn entirely on the relationship between them:
 
 !!! example "Feedforward is realisable only when θ<sub>d</sub> ≥ θ<sub>p</sub>"
     The ideal compensator is $-G_d(s)/G_p(s)$, which contains
@@ -128,7 +128,7 @@ represent about the process gets swept into an effective dead time — and dead
 time is precisely what feedback handles worst.
 
 ```python
-from src.tuning.rules import half_rule
+from process_control.tuning.rules import half_rule
 
 tau_eff, theta_eff = half_rule([40.0, 20.0, 10.0], theta=0.0, dt=1.0)
 # tau_eff = 50.0, theta_eff = 20.5

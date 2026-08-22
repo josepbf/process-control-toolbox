@@ -35,12 +35,29 @@ def plot_runs(
     u_label: str = "valve u [%]",
     path: str | Path | None = None,
     figsize: tuple[float, float] = (11.0, 8.0),
+    diagnostic: str | None = None,
+    diagnostic_label: str | None = None,
 ):
-    """Overlay several controllers on the standard three-panel layout."""
-    fig, axes = plt.subplots(
-        3, 1, figsize=figsize, sharex=True, gridspec_kw={"height_ratios": [3, 2, 1]}
-    )
-    ax_y, ax_u, ax_d = axes
+    """Overlay several controllers on the standard three-panel layout.
+
+    ``diagnostic`` names a signal published by the controllers via
+    :meth:`Controller.diagnostics` -- ``"inner_setpoint"``,
+    ``"u_feedforward"``, ``"duty"``. Naming one adds a panel for it, which is
+    how a cascade's inner setpoint or a feedforward's contribution becomes
+    visible rather than being buried inside the controller.
+    """
+    if diagnostic is not None:
+        fig, axes = plt.subplots(
+            4, 1, figsize=(figsize[0], figsize[1] * 1.2), sharex=True,
+            gridspec_kw={"height_ratios": [3, 2, 1.5, 1]},
+        )
+        ax_y, ax_u, ax_diag, ax_d = axes
+    else:
+        fig, axes = plt.subplots(
+            3, 1, figsize=figsize, sharex=True, gridspec_kw={"height_ratios": [3, 2, 1]}
+        )
+        ax_y, ax_u, ax_d = axes
+        ax_diag = None
 
     first = next(iter(runs.values()))
     t = first["t"].to_numpy(float)
@@ -50,6 +67,10 @@ def plot_runs(
         tt = df["t"].to_numpy(float)
         ax_y.plot(tt, signal(df, "y")[:, 0], lw=1.6, label=label)
         ax_u.step(tt, signal(df, "u")[:, 0], where="post", lw=1.4, label=label)
+        if ax_diag is not None:
+            col = f"diag_{diagnostic}"
+            if col in df.columns:
+                ax_diag.step(tt, df[col].to_numpy(float), where="post", lw=1.4, label=label)
 
     # Declared output band (reporting-only in phase 1) and actuator limits.
     for lim, name in ((first.attrs.get("y_min"), "y_min"), (first.attrs.get("y_max"), "y_max")):
@@ -60,7 +81,17 @@ def plot_runs(
         if lim is not None and np.isfinite(lim[0]):
             ax_u.axhline(lim[0], color="grey", ls=":", lw=1.2)
 
-    ax_d.step(t, signal(first, "d")[:, 0], where="post", color="darkorange", lw=1.4)
+    # Every disturbance channel, not just the first: a plant can be upset in
+    # more than one place, and a panel that silently shows only channel 0 makes
+    # the others look like they never happened.
+    d_all = signal(first, "d")
+    for j in range(d_all.shape[1]):
+        ax_d.step(
+            t, d_all[:, j], where="post", lw=1.4,
+            label=f"d{j}" if d_all.shape[1] > 1 else None,
+        )
+    if d_all.shape[1] > 1:
+        ax_d.legend(fontsize=8, ncol=d_all.shape[1])
 
     if scenario is not None:
         for wname, (w0, w1) in scenario.windows.items():
@@ -75,6 +106,10 @@ def plot_runs(
     ax_y.grid(alpha=0.3)
     ax_u.set_ylabel(u_label)
     ax_u.grid(alpha=0.3)
+    if ax_diag is not None:
+        ax_diag.set_ylabel(diagnostic_label or diagnostic.replace("_", " "))
+        ax_diag.grid(alpha=0.3)
+        ax_diag.legend(fontsize=8)
     ax_d.set_ylabel("disturbance d")
     ax_d.set_xlabel("time [s]")
     ax_d.grid(alpha=0.3)

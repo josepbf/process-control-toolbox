@@ -40,6 +40,22 @@ class Controller(ABC):
     def reset(self) -> None:
         """Clear all internal state (integrators, histories, warm starts)."""
 
+    def diagnostics(self) -> dict[str, float]:
+        """Internal signals worth logging alongside ``u``, as scalars.
+
+        A control law usually computes quantities that are not its output but
+        that explain its output: the setpoint a cascade's outer loop is asking
+        of its inner loop, the share of the move a feedforward compensator
+        contributed, the duty cycle behind a pulsed actuator. The harness logs
+        whatever is returned here under a ``diag_`` prefix, one column per key,
+        so those signals can be plotted and inspected instead of being
+        recomputed or guessed at.
+
+        Scalars only -- the log is one row per sample. Return ``{}`` (the
+        default) if the controller has nothing to add.
+        """
+        return {}
+
     def describe(self) -> dict:
         """Tuning record written alongside the metrics of every run."""
         return {"controller": self.name, "tuning": self.tuning_note}

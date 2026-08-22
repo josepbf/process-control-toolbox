@@ -45,20 +45,18 @@ results/exp08_metrics.csv
 from __future__ import annotations
 
 import pathlib
-import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pandas as pd
 
-from src.controllers.feedforward import FeedforwardPID
-from src.controllers.pid import PIDController
-from src.harness.metrics import compute_metrics
-from src.harness.plotting import plot_runs, save_table
-from src.harness.scenarios import Scenario, constant, staircase
-from src.harness.simulate import run_all
-from src.plants.tank import Tank
-from src.tuning.rules import simc_pi
+from process_control.controllers.feedforward import FeedforwardPID
+from process_control.controllers.pid import PIDController
+from process_control.harness.metrics import compute_metrics
+from process_control.harness.plotting import plot_runs, save_table
+from process_control.harness.scenarios import Scenario, constant, staircase
+from process_control.harness.simulate import run_all
+from process_control.plants.tank import Tank
+from process_control.tuning.rules import simc_pi
 
 RESULTS = pathlib.Path(__file__).resolve().parents[1] / "results"
 
@@ -160,13 +158,17 @@ def main() -> pd.DataFrame:
     save_table(table, RESULTS / "exp08_metrics.csv")
     plot_runs(
         runs, scenario=scenario,
-        title="Phase 1 -- feedforward from a measured disturbance (realisable: theta_d > theta)",
+        title="Feedforward from a measured disturbance (realisable: theta_d > theta)",
         path=RESULTS / "exp08_feedforward.png", figsize=(11.5, 8.0),
+        # Splitting out the feedforward share shows how much of the correction
+        # was anticipated rather than cleaned up after the error appeared.
+        diagnostic="u_feedforward", diagnostic_label="feedforward\nshare of u",
     )
     plot_runs(
         runs_bad, scenario=scenario,
-        title="Phase 1 -- the same designs when the disturbance beats the valve (theta_d = 0)",
+        title="The same designs when the disturbance beats the valve (theta_d = 0)",
         path=RESULTS / "exp08_unrealisable.png", figsize=(11.5, 8.0),
+        diagnostic="u_feedforward", diagnostic_label="feedforward\nshare of u",
     )
     print(f"\nwrote {RESULTS / 'exp08_feedforward.png'}")
     print(f"wrote {RESULTS / 'exp08_unrealisable.png'}")

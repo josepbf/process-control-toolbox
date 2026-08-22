@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.tuning.rules import (
+from process_control.tuning.rules import (
     imc_pi,
     series_to_ideal,
     simc_pi,
@@ -80,7 +80,7 @@ def test_unknown_zn_variant_raises():
 # ----------------------------------------------------------------------
 # the wider rule ladder
 # ----------------------------------------------------------------------
-from src.tuning.rules import (  # noqa: E402
+from process_control.tuning.rules import (  # noqa: E402
     amigo_pi,
     amigo_pid,
     averaging_level_pi,
@@ -114,7 +114,7 @@ def test_cohen_coon_gets_relatively_gentler_as_dead_time_grows():
     lag-dominant case its gain should not blow up the way ZN's does."""
     lag_dominant = dict(K=1.0, tau=100.0, theta=5.0)
     dt_dominant = dict(K=1.0, tau=10.0, theta=20.0)
-    from src.tuning.rules import ziegler_nichols_open_loop as zn
+    from process_control.tuning.rules import ziegler_nichols_open_loop as zn
 
     assert cohen_coon(**lag_dominant).Kc / zn(**lag_dominant).Kc > 1.0
     assert cohen_coon(**dt_dominant).Kc / zn(**dt_dominant).Kc < 1.4
@@ -133,7 +133,7 @@ def test_lambda_tuning_is_slower_for_larger_lambda():
 
 
 def test_amigo_is_conservative_relative_to_ziegler_nichols():
-    from src.tuning.rules import ziegler_nichols_open_loop as zn
+    from process_control.tuning.rules import ziegler_nichols_open_loop as zn
 
     args = dict(K=1.5, tau=60.0, theta=15.0)
     assert amigo_pi(**args).Kc < zn(**args, kind="PI").Kc

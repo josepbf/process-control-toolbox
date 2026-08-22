@@ -4,9 +4,9 @@
     Dynamic feedforward from a measured disturbance is worth **5.4× on IAE and
     16× on peak deviation** — more than the entire spread of ten tuning rules
     on the same plant. It is also the cheapest possible "prediction", and its
-    three qualifications apply directly to MPC.
+    three qualifications apply to any model-based scheme.
 
-    **Reproduce:** `python experiments/exp08_feedforward.py`
+    **Reproduce:** `python -m experiments.exp08_feedforward`
 
 ## The idea
 
@@ -62,7 +62,7 @@ differentiates that measurement, so pretending it is clean would be flattering.
 this plant, and more than the whole spread of the
 [tuning shootout](03-tuning-shootout.md).
 
-## Three qualifications, all of which apply to MPC
+## Three qualifications, all of which apply to any model-based scheme
 
 ### 1. The dynamics carry the benefit, not the gain
 
@@ -73,9 +73,9 @@ worth 5.4×.
 !!! quote
     Getting the ratio right is not enough; the **timing** is the thing.
 
-This is the single most transferable result on this page. An MPC with a
-correct steady-state gain and a wrong dynamic model is in exactly the position
-of the static-feedforward row.
+This is the single most transferable result on this page. A predictive
+controller with a correct steady-state gain and a wrong dynamic model is in
+exactly the position of the static-feedforward row.
 
 ### 2. It is open loop, so model error is not corrected
 
@@ -87,8 +87,9 @@ What saves it is the feedback controller underneath, which still removes the
 offset. Feedforward is never deployed alone. The pairing is the industrial
 standard: **feedforward for speed, feedback for the truth.**
 
-This is the same argument that will be made for MPC's internal model in
-phase 4, and it is why [fairness rule 3](../concepts/fairness.md) exists.
+This is the same argument that applies to any internal model, discussed in
+a mismatch study, and it is why [fairness rule 3](../concepts/fairness.md)
+exists.
 
 ### 3. It costs 5.8× the valve travel
 

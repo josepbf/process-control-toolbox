@@ -7,14 +7,14 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
 import numpy as np
 
-from src.controllers.pid import PIDController
-from src.harness.metrics import format_table, summarize
-from src.harness.plotting import plot_runs
-from src.harness.scenarios import Scenario, staircase
-from src.harness.simulate import simulate
-from src.plants.base import Plant
-from src.tuning.analysis import pid_on_fopdt
-from src.tuning.rules import half_rule, simc_pi
+from process_control.controllers.pid import PIDController
+from process_control.harness.metrics import format_table, summarize
+from process_control.harness.plotting import plot_runs
+from process_control.harness.scenarios import Scenario, staircase
+from process_control.harness.simulate import simulate
+from process_control.plants.base import Plant
+from process_control.tuning.analysis import pid_on_fopdt
+from process_control.tuning.rules import half_rule, simc_pi
 
 
 class JacketedVessel(Plant):

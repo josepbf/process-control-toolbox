@@ -17,34 +17,34 @@ limits.
 
 ## Base class
 
-::: src.plants.base.Plant
+::: process_control.plants.base.Plant
 
 ---
 
 ## Tank
 
-::: src.plants.tank.Tank
+::: process_control.plants.tank.Tank
 
 ---
 
 ## IntegratingTank
 
-::: src.plants.integrating_tank.IntegratingTank
+::: process_control.plants.integrating_tank.IntegratingTank
 
 ---
 
 ## SeriesTanks
 
-::: src.plants.series_tanks.SeriesTanks
+::: process_control.plants.series_tanks.SeriesTanks
 
 ---
 
 ## InverseResponseTank
 
-::: src.plants.inverse_response.InverseResponseTank
+::: process_control.plants.inverse_response.InverseResponseTank
 
 ---
 
 ## CascadeProcess
 
-::: src.plants.cascade_process.CascadeProcess
+::: process_control.plants.cascade_process.CascadeProcess

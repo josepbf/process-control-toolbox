@@ -3,13 +3,13 @@
 import numpy as np
 import pytest
 
-from src.controllers.onoff import OnOffController
-from src.controllers.pid import PIDController
-from src.harness.metrics import compute_metrics, reversals
-from src.harness.scenarios import Scenario, constant, staircase
-from src.harness.simulate import simulate
-from src.plants.tank import Tank
-from src.tuning.rules import simc_pi
+from process_control.controllers.onoff import OnOffController
+from process_control.controllers.pid import PIDController
+from process_control.harness.metrics import compute_metrics, reversals
+from process_control.harness.scenarios import Scenario, constant, staircase
+from process_control.harness.simulate import simulate
+from process_control.plants.tank import Tank
+from process_control.tuning.rules import simc_pi
 
 
 # ----------------------------------------------------------------------

@@ -2,8 +2,8 @@
 
 ## Requirements
 
-Python 3.11 or newer. Phase 1 depends on nothing but the scientific stack —
-no solver, no control-systems library. That is deliberate: the MPC of phase 2
+Python 3.11 or newer. The toolbox depends on nothing but the scientific stack
+— no solver, no control-systems library. That is deliberate: anything
 is built by hand, and cross-checks against reference implementations are added
 only when there is something to cross-check.
 
@@ -27,7 +27,7 @@ Every experiment is a standalone script. It prints its table, writes its
 figures and metric CSVs to `results/`, and needs no arguments.
 
 ```bash
-.venv/bin/python experiments/exp01_onoff_vs_pid.py
+.venv/bin/python -m experiments.exp01_onoff_vs_pid
 ```
 
 You should see something close to this (the numbers are deterministic — the
@@ -77,12 +77,12 @@ The three objects you need are a `Plant`, a `Controller` and a `Scenario`.
 `simulate()` puts them together and hands back a tidy DataFrame.
 
 ```python
-from src.plants.tank import Tank
-from src.controllers.pid import PIDController
-from src.harness.scenarios import setpoint_and_load
-from src.harness.simulate import simulate
-from src.harness.metrics import compute_metrics
-from src.tuning.rules import simc_pi
+from process_control.plants.tank import Tank
+from process_control.controllers.pid import PIDController
+from process_control.harness.scenarios import setpoint_and_load
+from process_control.harness.simulate import simulate
+from process_control.harness.metrics import compute_metrics
+from process_control.tuning.rules import simc_pi
 
 plant = Tank(K=1.5, tau=60.0, theta=15.0, h0=30.0, noise_std=0.15, seed=7)
 scenario = setpoint_and_load(dt=1.0, y_start=30.0, y_step=50.0, seed=7)
@@ -126,7 +126,7 @@ regenerate them after changing an experiment:
 ## Repository layout
 
 ```text
-src/
+process_control/
   plants/                 ground truth; owns all saturation, dead time and noise
   controllers/            control laws, swappable inside the harness
   harness/                the single closed-loop runner, scenarios, metrics, plots

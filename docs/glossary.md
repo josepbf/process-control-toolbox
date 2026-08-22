@@ -177,7 +177,7 @@ rejection. → `simc_pi()`, [Article 3](articles/03-tuning-shootout.md)
 
 A dead-time compensator: the controller acts on a model-predicted
 *undelayed* output, with the delayed model output compared against the real
-measurement for correction. Phase 5's classical baseline; not yet implemented.
+measurement for correction. Next on the roadmap; not yet implemented.
 
 ### Surge tank
 

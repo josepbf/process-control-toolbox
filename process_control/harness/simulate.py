@@ -57,7 +57,9 @@ def simulate(
 
     Returns a tidy DataFrame with one row per sample and these columns:
     ``t, y, sp, u, d, violation, violated, solve_time``  (vector signals get an
-    index suffix, e.g. ``y0``, ``y1``). Run metadata lands in ``df.attrs``.
+    index suffix, e.g. ``y0``, ``y1``). Controllers that implement
+    :meth:`Controller.diagnostics` add one ``diag_<name>`` column each. Run
+    metadata lands in ``df.attrs``.
     """
     if copy_plant:
         plant = copy.deepcopy(plant)
@@ -76,6 +78,7 @@ def simulate(
 
     rows = []
     u = np.zeros(plant.n_inputs)
+    diag: dict[str, float] = {}
     for k in range(scenario.n_steps):
         t = k * dt
         sp = np.atleast_1d(scenario.setpoint(t))
@@ -93,6 +96,10 @@ def simulate(
         u = np.atleast_1d(np.asarray(u, dtype=float))
         solve_time = perf_counter() - t0
 
+        # Internal signals the controller chooses to expose. Namespaced so they
+        # can never collide with the y/u/d/sp columns the metrics select on.
+        diag = {f"diag_{k}": float(v) for k, v in controller.diagnostics().items()}
+
         mag, flag = _violation(y, plant.y_min, plant.y_max)
         rows.append(
             {
@@ -102,6 +109,7 @@ def simulate(
                 **_row("u", u),
                 **_row("d", d),
                 **_row("d_meas", d_meas),
+                **diag,
                 "violation": mag,
                 "violated": flag,
                 "solve_time": solve_time,
@@ -120,6 +128,8 @@ def simulate(
             **_row("u", u),
             **_row("d", np.atleast_1d(scenario.disturbance(t))),
             **_row("d_meas", np.atleast_1d(scenario.disturbance(t))),
+            # No controller call on the final row, so the last values stand.
+            **diag,
             "violation": mag,
             "violated": flag,
             "solve_time": np.nan,

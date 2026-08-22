@@ -1,18 +1,20 @@
 # Fairness rules
 
-It is trivial to make MPC look brilliant by tuning the PID badly, and much of
-the published literature does exactly that. The defence is to fix the rules
-before the contenders arrive, write them down, and build the enforcement into
-the code rather than into good intentions.
+Comparing control strategies is one of the main things this toolbox gets used
+for, and it is trivially easy to do dishonestly — tune one contender badly,
+give another information the rest do not have, report tracking error and stay
+quiet about valve travel.
 
-Five rules. Each one has a specific mechanism behind it.
+The defence is to fix the rules in advance, write them down, and build the
+enforcement into the code rather than into good intentions. Five rules, each
+with a specific mechanism behind it.
 
 ---
 
 ## 1. Every baseline is tuned by a named, cited rule
 
 No silent hand-tuning, ever. Every PID in every reported comparison comes out
-of a function in [`src/tuning/rules.py`](../reference/tuning.md), and the rule
+of a function in [`process_control/tuning/rules.py`](../reference/tuning.md), and the rule
 — with its citation and its tuning knob — is recorded in the results table
 with the run.
 
@@ -28,11 +30,10 @@ pi = PIDController(**tuning.as_kwargs(), ..., tuning_note=tuning.rule)
 
 `df.attrs["tuning"]` then travels with the numbers, into the CSV.
 
-The rule was chosen on stated grounds, in
-[experiment 3](../articles/03-tuning-shootout.md), *before* any MPC result
-exists: **SIMC with τ<sub>c</sub> = θ**, with AMIGO as the robust alternative.
-Both appear in later comparisons, rather than one being quietly selected after
-the fact.
+The default baseline was chosen on stated grounds in
+[experiment 3](../articles/03-tuning-shootout.md): **SIMC with
+τ<sub>c</sub> = θ**, with AMIGO as the robust alternative. Both appear in later
+comparisons, rather than one being quietly selected after the fact.
 
 !!! warning "Why this rule is not paranoia"
     The ten published rules tested in experiment 3 disagree with each other by
@@ -56,7 +57,7 @@ cannot change the noise realisation seen on `y`.
 
 ---
 
-## 3. MPC's internal model is never the exact plant
+## 3. A controller's internal model is never the exact plant
 
 Unless explicitly labelled as an idealised upper bound.
 
@@ -67,9 +68,9 @@ say what they are:
 > This is the *true* model; a controller is only entitled to it when we
 > deliberately grant a no-mismatch upper bound.
 
-Phase 1 grants it everywhere, which is the **most generous possible setting
-for the baselines**, and says so in every experiment header. Deliberate model
-mismatch is phase 4's subject.
+The current experiments grant it everywhere, which is the **most generous
+possible setting for the baselines**, and every experiment header says so.
+Deliberate model mismatch is a separate study, for when identification lands.
 
 There is a preview of the honest version already, in
 [experiment 8](../articles/08-feedforward.md): the feedforward compensator is
@@ -85,7 +86,7 @@ saying so up front is what makes the wins credible.
 **Mechanism.** Editorial, but consistently applied and already visible:
 
 - [Experiment 1](../articles/01-onoff-vs-pid.md) closes with *"on this loop
-  there is nothing for MPC to do"*.
+  there is nothing for a more sophisticated controller to do"*.
 - [Experiment 7](../articles/07-cascade.md) reports cascade at **0.9×** —
   worse — on the disturbance it was not designed for, in the same table as the
   7.7× win.
@@ -102,9 +103,10 @@ the trivial ones.
 **Mechanism.** `simulate()` wraps every `compute()` call in `perf_counter()`
 and stores the result in the `solve_time` column; `compute_metrics()` reduces
 it to a mean and a 95th percentile. An ON/OFF controller comes out around
-1 µs, a PID around 3 µs. The column looks pointless in phase 1 — that is
-precisely why it is there from the start, so that when an MPC's QP solve lands
-in the same column nobody has to argue about whether to include it.
+1 µs, a PID around 3 µs. The column looks pointless today — that is
+precisely why it is there from the start: when an optimisation-based
+controller's solve time eventually lands in the same column, nobody has to
+argue about whether to include it.
 
 ---
 
@@ -118,7 +120,7 @@ it destroys valves. `compute_metrics()` always returns `TV_u`, `max_du` and
 `reversals` alongside IAE, and the standard figure always draws the
 manipulated variable underneath the controlled one.
 
-The phase-1 record on this point is unambiguous: **every improvement so far
-cost valve travel.** Cascade 2.1×, feedforward 5.8×, aggressive tuning 5.7×.
+The record on this point is unambiguous: **every improvement so far cost valve
+travel.** Cascade 2.1×, feedforward 5.8×, aggressive tuning 5.7×.
 
 See [Metrics](metrics.md) for what each of those numbers means.

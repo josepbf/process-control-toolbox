@@ -1,26 +1,26 @@
 # Process Control Toolbox
 
-Model Predictive Control implemented from scratch and benchmarked, fairly and
-quantitatively, against the classical ladder — ON/OFF, PID, cascade,
-feedforward, Smith predictor, LQR — on processes with the features that
-actually make industrial control hard: **long dead time, loop interaction,
-recycle, and hard actuator limits**.
+A toolbox for **classical process control** — plants, controllers, tuning
+rules, frequency-domain robustness analysis and a shared simulation harness —
+aimed at the features that actually make industrial control hard: **long dead
+time, loop interaction, recycle, and hard actuator limits**.
 
-The goal is understanding and a defensible comparison, not a production
-library. Implementations are explicit and readable in preference to clever.
+Everything is written to be read: explicit implementations in preference to
+clever ones, with the control concept behind each one explained where it
+appears. Every component is exercised by a reproducible experiment that
+demonstrates what it does and what it costs.
 
 !!! info "Project status"
-    **Phase 1 complete and extended.** Harness, five plants, six controllers,
-    thirteen tuning rules with frequency-domain robustness analysis, relay
-    auto-tuning, and nine reproducible experiments (119 tests). Phase 2 —
-    linear MPC by hand — has not started. See the [roadmap](roadmap.md).
+    Five plants, six controllers, thirteen tuning rules, relay auto-tuning,
+    frequency-domain robustness analysis, and nine reproducible experiments
+    (123 tests). Dead-time compensation is next — see the
+    [roadmap](roadmap.md).
 
-## The question this project exists to answer
+## What the toolbox is built on
 
-There is a very large literature comparing MPC against PID, and a great deal
-of it is worthless, for one structural reason: it is trivial to make MPC look
-brilliant by tuning the PID badly. This project's response is to fix the rules
-before the contenders arrive.
+Comparing control strategies is something the toolbox is *used for*, not what
+it is for — and comparisons are only worth reading if the ground rules are
+fixed in advance. Four properties are built in rather than promised.
 
 <div class="grid cards" markdown>
 
@@ -38,8 +38,7 @@ before the contenders arrive.
     ---
 
     Saturation and transport delay belong to the process, not the controller.
-    MPC's advantage has to come from *anticipating* a constraint, never from
-    being exempt from one.
+    A control law cannot exempt itself from a constraint, only anticipate one.
 
     [:octicons-arrow-right-24: Architecture](concepts/architecture.md)
 
@@ -118,17 +117,22 @@ different sample time, or a different noise stream.
 The complete running record, with every table, is in
 [`FINDINGS.md`](https://github.com/josepbf/process-control-toolbox/blob/main/FINDINGS.md).
 
-## What phase 1 has already established
+## What the experiments demonstrate
 
-1. **The PID baseline is SIMC (τ<sub>c</sub> = θ)**, with AMIGO as the robust
-   alternative — chosen on stated grounds *before* any MPC result exists.
+1. **Tuning is a frontier, not an optimum.** Ten published PI rules on one
+   plant span 4× in load-disturbance IAE and 5.7× in valve travel, lined up
+   monotonically against maximum sensitivity M<sub>s</sub>. Choosing a rule is
+   a decision about expected model error, and both axes get reported.
 2. **Structure beats tuning, repeatedly.** Anti-windup 16×, cascade 7.7×,
    feedforward 5.4× — every one larger than the entire spread of ten tuning
-   rules on the same plant. The interesting question for MPC is therefore not
-   "can it beat a PID" but "can it beat a *well-structured* classical scheme".
-3. **The peak deviation after a disturbance is mostly physics.** In the
-   dead-time-dominant regime PI is already within 2 % of the theoretical floor.
-   MPC's opportunity is in the recovery, in constraint handling, and in
-   multivariable coordination — not in the peak.
-4. **Every improvement so far cost valve travel.** No comparison in this
-   project is reported without the effort column.
+   rules on the same plant. When a loop underperforms, the question is usually
+   which structure is missing, not which gain is wrong.
+3. **Some of the loss is physics.** After a load step no controller can act for
+   one dead time. In the dead-time-dominant regime a SIMC PI is already within
+   2 % of that floor on peak deviation, while the recovery degrades 8×.
+4. **The metric decides the winner.** On a surge tank, tight and averaging
+   level control rank exactly opposite depending on the objective — and the
+   controller with the best robustness number is the one that breaches the
+   alarm band.
+5. **Every improvement costs valve travel.** Nothing here is reported without
+   the effort column.

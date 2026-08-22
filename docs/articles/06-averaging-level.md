@@ -7,7 +7,7 @@
     true. Which one is the objective is a question about the plant, not about
     control theory.
 
-    **Reproduce:** `python experiments/exp06_averaging_level.py`
+    **Reproduce:** `python -m experiments.exp06_averaging_level`
 
 ## The setup
 

@@ -5,7 +5,7 @@
     the integrator knows the valve is saturated. **16× on recovery IAE** — a
     structural fix, not a tuning one.
 
-    **Reproduce:** `python experiments/exp02_antiwindup.py`
+    **Reproduce:** `python -m experiments.exp02_antiwindup`
 
 ## The setup
 
@@ -92,7 +92,8 @@ same two numbers.
 !!! danger "The point for the whole project"
     Any comparison that tunes PID carefully but leaves anti-windup out is not
     comparing control laws — it is comparing a correct implementation against
-    a broken one. And constrained operation is exactly the regime where MPC is
+    a broken one. And constrained operation is exactly the regime where any
+    constraint-aware controller is
     supposed to be judged.
 
     This is why [fairness rule 1](../concepts/fairness.md) is not enough on

@@ -7,9 +7,9 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
 import numpy as np
 
-from src.plants.tank import Tank
-from src.tuning.analysis import pid_on_fopdt
-from src.tuning.rules import (
+from process_control.plants.tank import Tank
+from process_control.tuning.analysis import pid_on_fopdt
+from process_control.tuning.rules import (
     amigo_pi,
     lambda_tuning,
     simc_pi,

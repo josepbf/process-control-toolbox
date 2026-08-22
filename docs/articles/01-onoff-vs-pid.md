@@ -6,7 +6,7 @@
     offset. SIMC versus Ziegler–Nichols is a tracking-versus-effort trade, and
     neither is "better" until you say what the loop is for.
 
-    **Reproduce:** `python experiments/exp01_onoff_vs_pid.py`
+    **Reproduce:** `python -m experiments.exp01_onoff_vs_pid`
 
 ## The setup
 
@@ -20,7 +20,7 @@
 
 Both PI tunings come from published rules applied to the **true** plant
 parameters — the most generous possible setting for the baselines. Model
-mismatch is phase 4's job, and it is introduced there deliberately.
+mismatch is a separate question, taken up when identification lands.
 
 ![ON/OFF vs PID](../assets/figures/exp01_onoff_vs_pid.png)
 
@@ -93,15 +93,16 @@ mill loop, the SIMC tuning is the one that survives a valve maintenance
 review. That judgement is made properly, across ten rules and against a
 robustness axis, in [article 3](03-tuning-shootout.md).
 
-## Reported honestly: there is nothing here for MPC to do
+## Reported honestly: there is nothing here for a more elaborate controller to do
 
 One input, one output, no active constraint, a dead-time ratio of 0.25 that a
 PI handles comfortably, and a tracking error already down at the noise floor.
 
-Phase 2 has to construct a scenario with an **active output constraint** before
-MPC can show anything a PI cannot already do, and phase 3 has to introduce loop
-interaction. Expect PID to remain the right answer for fast SISO loops
-throughout — [fairness rule 4](../concepts/fairness.md).
+Showing that a more elaborate controller earns its keep would mean
+constructing a different case altogether: an **active output constraint**,
+severe dead time, or strong loop interaction. On a fast SISO loop with none of
+those, PID is the right answer, and the toolbox says so —
+[fairness rule 4](../concepts/fairness.md).
 
 ## The code
 

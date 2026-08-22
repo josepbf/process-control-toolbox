@@ -5,11 +5,11 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
-from src.harness.plotting import plot_runs
-from src.plants.tank import Tank
-from src.tuning.analysis import pid_on_fopdt, ultimate_gain_period
-from src.tuning.relay import relay_autotune
-from src.tuning.rules import simc_pi, tyreus_luyben, ziegler_nichols_closed_loop
+from process_control.harness.plotting import plot_runs
+from process_control.plants.tank import Tank
+from process_control.tuning.analysis import pid_on_fopdt, ultimate_gain_period
+from process_control.tuning.relay import relay_autotune
+from process_control.tuning.rules import simc_pi, tyreus_luyben, ziegler_nichols_closed_loop
 
 TRUE = {"K": 1.5, "tau": 60.0, "theta": 15.0}
 Ku_true, Pu_true = ultimate_gain_period(**TRUE)

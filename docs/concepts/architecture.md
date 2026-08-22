@@ -27,8 +27,8 @@ only the value returned by `Plant.step()`. Two consequences are enforced
 throughout the project, and both are load-bearing rather than stylistic:
 
 !!! abstract "All saturation and all transport delay live in the plant"
-    Every controller therefore faces identical physical limits. When MPC
-    arrives in phase 2, any advantage it shows has to come from *anticipating*
+    Every controller therefore faces identical physical limits. Any advantage
+    a control law shows has to come from *anticipating*
     a constraint — never from being exempt from one. A controller that clipped
     its own output, or that quietly modelled a shorter dead time than the
     process has, would be competing in a different race.
@@ -72,7 +72,7 @@ Plus three declarative attributes that the harness records with every run:
 | `tuning_note` | how this controller was tuned, with its citation |
 | `uses_measured_disturbance` | whether it reads an instrumented disturbance |
 
-A controller is allowed — and from phase 2 on, encouraged — to carry its own
+A controller is allowed, and for model-based schemes required, to carry its own
 **internal model** of the process. That model is not required to match the
 plant, and the interesting results in this project come from the gap between
 them.
@@ -126,8 +126,8 @@ saturate  →  delay  →  integrate (ZOH)  →  measure (+ noise)  →  measure
 
 `solve_time` is logged for **every** controller, including the trivial ones.
 Recording that a PID takes 3 µs is not interesting on its own; it becomes
-interesting the moment it sits in the same column as an MPC's QP solve, which
-is why the column exists from experiment 1 rather than from phase 2.
+interesting the moment it sits in the same column as an optimisation-based
+controller's solve time, which is why the column exists from experiment 1.
 
 Run metadata lands in `df.attrs`: controller name, the full `describe()`
 record, plant repr, scenario name, `dt`, seed, and the actuator and output

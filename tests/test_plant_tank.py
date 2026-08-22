@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from src.plants.tank import Tank
+from process_control.plants.tank import Tank
 
 
 def _run(plant, u, n, dt=1.0, d=0.0):

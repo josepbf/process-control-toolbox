@@ -37,8 +37,8 @@ So $M_s = 1.4$ guarantees GM ≥ 3.5 and PM ≥ 42°.
 ## Computing it
 
 ```python
-from src.tuning.analysis import pid_on_fopdt
-from src.tuning.rules import simc_pi
+from process_control.tuning.analysis import pid_on_fopdt
+from process_control.tuning.rules import simc_pi
 
 t = simc_pi(K=1.5, tau=60.0, theta=15.0)
 m = pid_on_fopdt(K=1.5, tau=60.0, theta=15.0, Kc=t.Kc, Ti=t.Ti)

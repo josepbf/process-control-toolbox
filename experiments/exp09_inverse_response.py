@@ -43,21 +43,19 @@ results/exp09_metrics.csv, results/exp09_sweep.csv
 from __future__ import annotations
 
 import pathlib
-import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import numpy as np
 import pandas as pd
 
-from src.controllers.pid import PIDController
-from src.harness.metrics import compute_metrics
-from src.harness.plotting import plot_runs, plot_sweep, save_table
-from src.harness.scenarios import setpoint_and_load
-from src.harness.simulate import run_all, simulate
-from src.plants.inverse_response import InverseResponseTank
-from src.tuning.analysis import pid_on_fopdt
-from src.tuning.rules import simc_pi
+from process_control.controllers.pid import PIDController
+from process_control.harness.metrics import compute_metrics
+from process_control.harness.plotting import plot_runs, plot_sweep, save_table
+from process_control.harness.scenarios import setpoint_and_load
+from process_control.harness.simulate import run_all, simulate
+from process_control.plants.inverse_response import InverseResponseTank
+from process_control.tuning.analysis import pid_on_fopdt
+from process_control.tuning.rules import simc_pi
 
 RESULTS = pathlib.Path(__file__).resolve().parents[1] / "results"
 

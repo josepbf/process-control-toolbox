@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from src.plants.tank import Tank
-from src.tuning.analysis import ultimate_gain_period
-from src.tuning.relay import relay_autotune
+from process_control.plants.tank import Tank
+from process_control.tuning.analysis import ultimate_gain_period
+from process_control.tuning.relay import relay_autotune
 
 
 def _plant(**kw):

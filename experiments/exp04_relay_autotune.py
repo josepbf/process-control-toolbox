@@ -22,21 +22,19 @@ results/exp04_metrics.csv
 from __future__ import annotations
 
 import pathlib
-import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pandas as pd
 
-from src.controllers.pid import PIDController
-from src.harness.metrics import compute_metrics
-from src.harness.plotting import plot_runs, save_table
-from src.harness.scenarios import setpoint_and_load
-from src.harness.simulate import run_all
-from src.plants.tank import Tank
-from src.tuning.analysis import pid_on_fopdt, ultimate_gain_period
-from src.tuning.relay import relay_autotune
-from src.tuning.rules import simc_pi, tyreus_luyben, ziegler_nichols_closed_loop
+from process_control.controllers.pid import PIDController
+from process_control.harness.metrics import compute_metrics
+from process_control.harness.plotting import plot_runs, save_table
+from process_control.harness.scenarios import setpoint_and_load
+from process_control.harness.simulate import run_all
+from process_control.plants.tank import Tank
+from process_control.tuning.analysis import pid_on_fopdt, ultimate_gain_period
+from process_control.tuning.relay import relay_autotune
+from process_control.tuning.rules import simc_pi, tyreus_luyben, ziegler_nichols_closed_loop
 
 RESULTS = pathlib.Path(__file__).resolve().parents[1] / "results"
 

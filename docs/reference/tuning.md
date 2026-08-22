@@ -10,78 +10,78 @@ means.
 
 ## The tuning record
 
-::: src.tuning.rules.PIDTuning
+::: process_control.tuning.rules.PIDTuning
 
 ---
 
 ## Rules for self-regulating processes
 
-::: src.tuning.rules.simc_pi
+::: process_control.tuning.rules.simc_pi
 
-::: src.tuning.rules.simc_pid
+::: process_control.tuning.rules.simc_pid
 
-::: src.tuning.rules.imc_pi
+::: process_control.tuning.rules.imc_pi
 
-::: src.tuning.rules.imc_pid
+::: process_control.tuning.rules.imc_pid
 
-::: src.tuning.rules.lambda_tuning
+::: process_control.tuning.rules.lambda_tuning
 
-::: src.tuning.rules.amigo_pi
+::: process_control.tuning.rules.amigo_pi
 
-::: src.tuning.rules.amigo_pid
+::: process_control.tuning.rules.amigo_pid
 
-::: src.tuning.rules.ziegler_nichols_open_loop
+::: process_control.tuning.rules.ziegler_nichols_open_loop
 
-::: src.tuning.rules.cohen_coon
+::: process_control.tuning.rules.cohen_coon
 
 ---
 
 ## Rules from the ultimate gain and period
 
-::: src.tuning.rules.ziegler_nichols_closed_loop
+::: process_control.tuning.rules.ziegler_nichols_closed_loop
 
-::: src.tuning.rules.tyreus_luyben
+::: process_control.tuning.rules.tyreus_luyben
 
 ---
 
 ## Rules for integrating processes
 
-::: src.tuning.rules.simc_integrating
+::: process_control.tuning.rules.simc_integrating
 
-::: src.tuning.rules.averaging_level_pi
+::: process_control.tuning.rules.averaging_level_pi
 
 ---
 
 ## Model reduction and form conversion
 
-::: src.tuning.rules.half_rule
+::: process_control.tuning.rules.half_rule
 
-::: src.tuning.rules.series_to_ideal
+::: process_control.tuning.rules.series_to_ideal
 
 ---
 
 ## Robustness analysis
 
-::: src.tuning.analysis.pid_on_fopdt
+::: process_control.tuning.analysis.pid_on_fopdt
 
-::: src.tuning.analysis.pid_on_integrator
+::: process_control.tuning.analysis.pid_on_integrator
 
-::: src.tuning.analysis.loop_metrics
+::: process_control.tuning.analysis.loop_metrics
 
-::: src.tuning.analysis.ultimate_gain_period
+::: process_control.tuning.analysis.ultimate_gain_period
 
 ### Frequency responses
 
-::: src.tuning.analysis.fopdt_response
+::: process_control.tuning.analysis.fopdt_response
 
-::: src.tuning.analysis.integrator_response
+::: process_control.tuning.analysis.integrator_response
 
-::: src.tuning.analysis.pid_response
+::: process_control.tuning.analysis.pid_response
 
 ---
 
 ## Relay auto-tuning
 
-::: src.tuning.relay.relay_autotune
+::: process_control.tuning.relay.relay_autotune
 
-::: src.tuning.relay.RelayResult
+::: process_control.tuning.relay.RelayResult

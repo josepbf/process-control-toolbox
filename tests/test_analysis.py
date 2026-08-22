@@ -3,13 +3,13 @@
 import numpy as np
 import pytest
 
-from src.tuning.analysis import (
+from process_control.tuning.analysis import (
     fopdt_response,
     pid_on_fopdt,
     pid_on_integrator,
     ultimate_gain_period,
 )
-from src.tuning.rules import (
+from process_control.tuning.rules import (
     amigo_pi,
     cohen_coon,
     imc_pi,

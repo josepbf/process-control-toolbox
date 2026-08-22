@@ -33,20 +33,18 @@ results/exp07_metrics.csv
 from __future__ import annotations
 
 import pathlib
-import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pandas as pd
 
-from src.controllers.cascade import CascadeController
-from src.controllers.pid import PIDController
-from src.harness.metrics import compute_metrics
-from src.harness.plotting import plot_runs, save_table
-from src.harness.scenarios import Scenario, staircase
-from src.harness.simulate import run_all
-from src.plants.cascade_process import CascadeProcess
-from src.tuning.rules import simc_pi
+from process_control.controllers.cascade import CascadeController
+from process_control.controllers.pid import PIDController
+from process_control.harness.metrics import compute_metrics
+from process_control.harness.plotting import plot_runs, save_table
+from process_control.harness.scenarios import Scenario, staircase
+from process_control.harness.simulate import run_all
+from process_control.plants.cascade_process import CascadeProcess
+from process_control.tuning.rules import simc_pi
 
 RESULTS = pathlib.Path(__file__).resolve().parents[1] / "results"
 
@@ -147,6 +145,10 @@ def main() -> pd.DataFrame:
         u_label="valve u [%]",
         path=RESULTS / "exp07_cascade.png",
         figsize=(11.5, 8.0),
+        # The outer loop's real output is the inner setpoint, not the valve.
+        # Only the cascade publishes it, which is itself the point.
+        diagnostic="inner_setpoint",
+        diagnostic_label="inner SP\n(flow)",
     )
     print(f"\nwrote {RESULTS / 'exp07_cascade.png'}")
     print(f"wrote {RESULTS / 'exp07_metrics.csv'}")

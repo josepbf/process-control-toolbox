@@ -6,7 +6,7 @@
     not, at **2.1× the valve travel** throughout. The negative result is as
     important as the positive one.
 
-    **Reproduce:** `python experiments/exp07_cascade.py`
+    **Reproduce:** `python -m experiments.exp07_cascade`
 
 ## The structure
 
@@ -49,7 +49,7 @@ This is the case cascade was invented for.
     method are all identical. The only difference is one extra measurement.
 
     That is the honest way to price a structural change — and it is the same
-    accounting MPC will be put through in later phases.
+    accounting any later structural change gets put through.
 
 Both controllers are SIMC-tuned. The cascade is tuned in the standard order:
 inner loop first and tight, then the outer loop against the *closed* inner
@@ -103,7 +103,7 @@ extra loop rather than acting on the valve directly.
 
 !!! danger "This is the correct shape for a structural change"
     It buys a **specific** thing. Reporting only the case where it wins would
-    be the same sleight of hand this project is trying to avoid for MPC.
+    be the same sleight of hand this toolbox is built to make hard.
 
     See [fairness rule 4](../concepts/fairness.md#4-scenarios-where-the-sophisticated-method-loses-get-reported).
 
@@ -169,4 +169,4 @@ Full script: [`experiments/exp07_cascade.py`](https://github.com/josepbf/process
 ## Next
 
 [Article 8: feedforward](08-feedforward.md) — the other structural win, and
-the one that most directly previews MPC.
+the one that most directly previews model-based control.

@@ -29,8 +29,8 @@ K_u = \frac{4h}{\pi\sqrt{a^2 - \varepsilon^2}} \quad\text{(hysteresis } \varepsi
 ## Run one
 
 ```python
-from src.plants.tank import Tank
-from src.tuning.relay import relay_autotune
+from process_control.plants.tank import Tank
+from process_control.tuning.relay import relay_autotune
 
 plant = Tank(K=1.5, tau=60.0, theta=15.0, h0=50.0, noise_std=0.15, seed=7)
 
@@ -66,7 +66,7 @@ This plant's ultimate values are known analytically, so the error can be
 measured rather than guessed:
 
 ```python
-from src.tuning.analysis import ultimate_gain_period
+from process_control.tuning.analysis import ultimate_gain_period
 Ku_true, Pu_true = ultimate_gain_period(K=1.5, tau=60.0, theta=15.0)
 # 4.623, 54.9
 ```
@@ -130,7 +130,7 @@ reads its own output for exactly this reason.
 ## Turning it into a controller
 
 ```python
-from src.tuning.rules import tyreus_luyben, ziegler_nichols_closed_loop
+from process_control.tuning.rules import tyreus_luyben, ziegler_nichols_closed_loop
 
 zn = ziegler_nichols_closed_loop(relay.Ku, relay.Pu, kind="PI")
 tl = tyreus_luyben(relay.Ku, relay.Pu, kind="PI")

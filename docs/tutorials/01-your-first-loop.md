@@ -11,7 +11,7 @@ plus dead time. Level `h` [%] driven by an inlet valve `u` [%] whose effect
 arrives `theta` seconds late, pushed around by an unmeasured load `d`.
 
 ```python
-from src.plants.tank import Tank
+from process_control.plants.tank import Tank
 
 plant = Tank(
     K=1.5,            # gain: % level per % valve
@@ -37,7 +37,7 @@ Two properties are worth knowing straight away:
 ```
 
 `fopdt` is the **true** model. A controller is only entitled to it when we
-deliberately grant a no-mismatch upper bound — which phase 1 does everywhere,
+deliberately grant a no-mismatch upper bound — which the current experiments do,
 and says so. See [fairness rule 3](../concepts/fairness.md).
 
 $\theta/\tau = 0.25$ puts this loop in the comfortable middle: a PI handles it
@@ -51,7 +51,7 @@ setpoint programme, a disturbance programme, a seed, and named reporting
 windows.
 
 ```python
-from src.harness.scenarios import setpoint_and_load
+from process_control.harness.scenarios import setpoint_and_load
 
 scenario = setpoint_and_load(
     dt=1.0,
@@ -77,7 +77,7 @@ are in tension. Reporting them separately is what keeps the trade visible.
 No hand-tuning. Pick a published rule and let the number fall where it may.
 
 ```python
-from src.tuning.rules import simc_pi
+from process_control.tuning.rules import simc_pi
 
 tuning = simc_pi(**plant.fopdt)
 ```
@@ -90,7 +90,7 @@ tuning = simc_pi(**plant.fopdt)
 ## 4. The controller
 
 ```python
-from src.controllers.pid import PIDController
+from process_control.controllers.pid import PIDController
 
 pi = PIDController(
     **tuning.as_kwargs(),          # Kc, Ti, Td
@@ -116,7 +116,7 @@ pi = PIDController(
 ## 5. Run it
 
 ```python
-from src.harness.simulate import simulate
+from process_control.harness.simulate import simulate
 
 df = simulate(plant, pi, scenario)
 ```
@@ -140,7 +140,7 @@ object against a dozen controllers without any of them contaminating the next.
 ## 6. Score it
 
 ```python
-from src.harness.metrics import compute_metrics
+from process_control.harness.metrics import compute_metrics
 
 compute_metrics(df, scenario.windows["disturbance"])
 ```
@@ -167,7 +167,7 @@ Three things to notice.
 For the whole run at once, across every window:
 
 ```python
-from src.harness.metrics import summarize, format_table
+from process_control.harness.metrics import summarize, format_table
 
 table = summarize({"PI (SIMC)": df}, windows=scenario.windows)
 print(format_table(table))
@@ -184,7 +184,7 @@ PI (SIMC)  full         1147.124 446325.935          845.000          6.010    2
 ## 7. Draw it
 
 ```python
-from src.harness.plotting import plot_runs
+from process_control.harness.plotting import plot_runs
 
 plot_runs(
     {"PI (SIMC)": df},
@@ -206,8 +206,8 @@ plant, the same scenario and the same seed, so the only difference is the
 control law.
 
 ```python
-from src.controllers.onoff import OnOffController
-from src.harness.simulate import run_all
+from process_control.controllers.onoff import OnOffController
+from process_control.harness.simulate import run_all
 
 onoff = OnOffController(u_on=100.0, u_off=0.0, hysteresis=1.0)
 

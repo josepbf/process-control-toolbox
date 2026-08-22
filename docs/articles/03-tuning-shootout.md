@@ -7,16 +7,16 @@
     the knee, and is adopted as the project's PID baseline on that stated
     ground.
 
-    **Reproduce:** `python experiments/exp03_tuning_shootout.py`
+    **Reproduce:** `python -m experiments.exp03_tuning_shootout`
 
 ## Why this experiment exists
 
-The whole MPC-versus-PID literature turns on which PID you compare against,
+Any comparison against PID turns on which PID you compare against,
 and "tuned by a named rule" is not by itself enough — **the named rules
 disagree with each other by a factor of 4.6 in gain.**
 
-So the baseline gets picked here, in public, on stated grounds, before any MPC
-exists to be flattered by the choice.
+So the baseline gets picked here, in public, on stated grounds, before any
+contender exists to be flattered by the choice.
 
 Plant: `K = 1.5, τ = 60 s, θ = 15 s`, the same scenario as
 [article 1](01-onoff-vs-pid.md). Robustness computed with
@@ -88,7 +88,7 @@ picture when they hear "tuned PID". They land at **Ms 2.8–3.7** — loops that
 will oscillate the first time the process gain moves.
 
 !!! danger
-    Benchmarking MPC against *those* would be flattering and meaningless.
+    Benchmarking anything against *those* would be flattering and meaningless.
     Any published comparison whose PID baseline shows 40–75 % overshoot on a
     setpoint step is, whether or not it says so, comparing against a rule from
     1942 or 1953 that was targeting quarter-amplitude decay — a taste, not a

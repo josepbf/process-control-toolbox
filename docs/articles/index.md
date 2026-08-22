@@ -61,7 +61,7 @@ run yourself in a few seconds. The condensed running record is in
 -   __[8. Feedforward](08-feedforward.md)__
 
     The cheapest possible prediction — 5.4× on IAE — and the three
-    qualifications that apply directly to MPC.
+    qualifications that apply to any model-based scheme.
 
     `exp08_feedforward.py`
 
@@ -90,9 +90,10 @@ Read in order, the nine articles build one argument:
    ([5](05-dead-time-sweep.md), [9](09-inverse-response.md)).
 4. Before any of that, someone has to say what the loop is *for*
    ([6](06-averaging-level.md)).
-5. And the largest wins available in phase 1 come from **structure** —
+5. And the largest wins available come from **structure** —
    an extra measurement ([7](07-cascade.md)), an instrumented disturbance
    ([8](08-feedforward.md)) — not from tuning.
 
-Which sets up the question phase 2 onward has to answer: not *can MPC beat a
-PID*, but **can MPC beat a well-structured classical scheme**.
+Which sets the bar for anything added later: not *can it beat a PID*, but
+**can it beat a well-structured classical scheme** — a cascade with
+feedforward, correct anti-windup, and a cited tuning rule.

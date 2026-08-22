@@ -7,7 +7,7 @@
     with the plant gain and both time constants untouched. **An RHP zero costs
     what dead time costs.**
 
-    **Reproduce:** `python experiments/exp09_inverse_response.py`
+    **Reproduce:** `python -m experiments.exp09_inverse_response`
 
 ## The process
 
@@ -144,12 +144,12 @@ there as the control case.
 
 ## What this sets up
 
-This is **phase 3's non-minimum-phase story in miniature**, isolated on a SISO
+This is the **non-minimum-phase problem in miniature**, isolated on a SISO
 loop before loop interaction is layered on top.
 
-The claim that phase 3 will have to test: a model-based controller escapes the
-wrong-way dip not by pushing harder but by *not reacting to it* — it knows the
-dip is its own doing and rides through it. On this SISO loop that is a modest
+The claim any multivariable work will have to test: a model-based controller
+escapes the wrong-way dip not by pushing harder but by *not reacting to it* —
+it knows the dip is its own doing and rides through it. On this SISO loop that is a modest
 win. On a multivariable plant where one loop's inverse response drives
 another's measurement, it is expected to be a large one.
 
@@ -173,6 +173,6 @@ Full script: [`experiments/exp09_inverse_response.py`](https://github.com/josepb
 
 ## Next
 
-That is the end of phase 1. What it all adds up to is on the
+What it all adds up to is on the
 [articles index](index.md#the-through-line); what happens next is the
 [roadmap](../roadmap.md).

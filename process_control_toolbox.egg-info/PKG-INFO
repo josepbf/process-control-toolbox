@@ -1,21 +1,32 @@
-# Process Control Toolbox
+Metadata-Version: 2.4
+Name: process-control-toolbox
+Version: 0.1.0
+Summary: A toolbox for classical process control: plants, controllers, tuning rules, robustness analysis and a simulation harness
+Author: Josep Blazquez
+License: MIT
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=2.0
+Requires-Dist: scipy>=1.12
+Requires-Dist: matplotlib>=3.8
+Requires-Dist: pandas>=2.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
 
-A toolbox for **classical process control** — plants, controllers, tuning
-rules, frequency-domain robustness analysis and a shared simulation harness —
-aimed at the features that actually make industrial control hard: **long dead
-time, loop interaction, recycle, and hard actuator limits**.
+# MPC vs classical process control
 
-Everything is written to be read: explicit implementations in preference to
-clever ones, with the control concept behind each one explained where it
-appears. Every component is exercised by a reproducible experiment that
-demonstrates what it does and what it costs.
+Model Predictive Control implemented from scratch and benchmarked, fairly and
+quantitatively, against the classical ladder — ON/OFF, PID, cascade, Smith
+predictor, LQR — on processes with the features that actually make industrial
+control hard: **long dead time, loop interaction, recycle, and hard actuator
+limits**.
 
-Comparing control strategies is something the toolbox is *used for* — see
-[FINDINGS.md](FINDINGS.md) — not what it is for.
+The goal is understanding and a defensible comparison, not a production
+library. Implementations are explicit and readable in preference to clever.
 
-**Status.** Five plants, six controllers, thirteen tuning rules, relay
-auto-tuning, frequency-domain robustness analysis, and nine reproducible
-experiments, with 123 tests. Dead-time compensation is next.
+**Status: phase 1 complete and extended.** Harness, five plants, six
+controllers, thirteen tuning rules with frequency-domain robustness analysis,
+relay auto-tuning, and nine reproducible experiments. Phase 2 (linear MPC by hand) not started.
 
 ## Documentation
 
@@ -38,32 +49,19 @@ and as plain Markdown in [`docs/`](docs/).
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
-To use the toolbox outside the repository — a notebook, another project —
-install it in editable mode as well:
-
-```bash
-.venv/bin/pip install -e . --config-settings editable_mode=compat
-```
-
-Then `from process_control import Tank, PIDController, simulate, simc_pi`
-works from anywhere. (The `editable_mode=compat` setting writes a plain path
-entry rather than setuptools' import-hook variant, which is not honoured in
-every environment.) Running the bundled experiments and tests needs no
-install at all.
-
 ## Reproduce the results
 
-Run any experiment as a module; each writes its figures and metric CSVs to
+Run any experiment directly; each writes its figures and metric CSVs to
 `results/` (gitignored) and prints its table.
 
 ```bash
-.venv/bin/python -m experiments.exp01_onoff_vs_pid
+.venv/bin/python experiments/exp01_onoff_vs_pid.py
 ```
 
 Run them all, then the test suite:
 
 ```bash
-for f in experiments/exp*.py; do .venv/bin/python -m "experiments.$(basename "$f" .py)"; done
+for f in experiments/exp*.py; do .venv/bin/python "$f"; done
 ```
 
 ```bash
@@ -88,7 +86,7 @@ length in the [articles](docs/articles/index.md).
 ## Layout
 
 ```
-process_control/
+src/
   plants/                 ground truth; owns all saturation, dead time and noise
     base.py                 Plant ABC: RK4, three independent delay paths
     tank.py                 SISO level, FOPDT, separate disturbance path
@@ -115,7 +113,7 @@ process_control/
     analysis.py             Ms, gain and phase margin, analytic ultimate gain
     relay.py                Astrom-Hagglund relay auto-tuning
 experiments/              one script per reported result
-tests/                    pytest suite (123 tests)
+tests/                    pytest suite (119 tests)
 results/                  generated figures and CSVs (gitignored)
 docs/                     documentation site (MkDocs Material)
 tools/                    documentation asset build
@@ -152,58 +150,43 @@ class Controller(ABC):
 Two rules follow from this split and are enforced throughout:
 
 * **All saturation and all transport delay live in the plant**, so every
-  controller faces identical physical limits. A control law cannot exempt
-  itself from a constraint, only anticipate one.
+  controller faces identical physical limits. MPC's advantage has to come from
+  *anticipating* a constraint, never from being exempt from one.
 * **`reset()` re-seeds the plant's noise generator**, so two controllers
   compared on the same scenario see a bit-identical noise realisation.
 * **A controller only receives a measured disturbance if it declares
   `uses_measured_disturbance`**, so no controller can quietly benefit from
   information the others do not have.
-* **Controllers publish their internal signals** through `diagnostics()` —
-  a cascade's inner setpoint, a feedforward's contribution — logged under a
-  `diag_` prefix and plottable.
 
-[ARCHITECTURE.md](ARCHITECTURE.md) documents how the pieces fit and the
-contract for adding a controller that needs more than the current measurement.
+## Fairness rules
 
-## Design principles
+It is trivial to make MPC look brilliant by tuning the PID badly, and much of
+the published literature does exactly that. This project enforces:
 
-Four properties the toolbox is built to guarantee. They started as rules for
-keeping a controller comparison honest, and they are more useful as library
-guarantees:
+1. Every baseline is tuned by a **named, cited rule** (SIMC, IMC, ZN, and RGA
+   pairing from phase 3), and the rule is recorded in the results table with
+   the run. No silent hand-tuning.
+2. Identical plant, sample time, noise seed, disturbance profile and actuator
+   limits across every controller in a comparison.
+3. MPC's internal model is never the exact plant, unless explicitly labelled as
+   an idealised upper bound.
+4. Scenarios where MPC does **not** win get reported. Fast SISO loops with no
+   active constraint are expected to favour PID.
+5. MPC's computational cost appears in the comparison table (`solve_ms_mean`,
+   `solve_ms_p95` are logged for every controller, including the trivial ones).
 
-1. **Every tuning is a named, cited rule.** SIMC, IMC, Lambda, Cohen-Coon,
-   Ziegler-Nichols, Tyreus-Luyben, AMIGO — each returns the citation alongside
-   the gains, and the harness records it with the run. No silent hand-tuning
-   anywhere in the repository.
-2. **The plant owns every physical limit.** Actuator saturation, all three
-   dead-time paths and measurement noise live in the `Plant`, so no control law
-   can exempt itself from a constraint.
-3. **Runs are reproducible and comparable.** `reset()` re-seeds the plant's
-   noise generator, so two controllers on the same scenario see a bit-identical
-   noise realisation. Extra information — a measured disturbance — is only
-   supplied to a controller that declares it needs it.
-4. **Tracking is always reported with control effort.** Every metric table
-   carries a tracking metric *and* an effort metric (`TV_u`, `reversals`,
-   `max_du`), plus computation cost (`solve_ms_mean`, `solve_ms_p95`).
-   Tracking bought with violent actuator movement is not a win — in a real
-   plant it destroys valves.
+Every reported comparison carries a tracking metric **and** a control-effort
+metric. Tracking bought with violent actuator movement is not a win — in a real
+plant it destroys valves.
 
 ## Roadmap
 
-Organised by capability. Each item lands with the tuning method, the tests and
-the experiment that demonstrate it.
-
-| capability | content | status |
+| phase | content | status |
 |---|---|---|
-| harness and metrics | closed-loop runner, scenarios, tracking/effort/constraint/computation metrics, plotting | done |
-| plants | FOPDT tank, integrating surge tank, series lags, inverse response, two-stage cascade | done |
-| controllers | ON/OFF, time-proportioning, PID (positional and velocity), cascade, feedforward | done |
-| tuning and analysis | thirteen named rules, half-rule reduction, Ms/GM/PM analysis, relay auto-tuning | done |
-| **dead-time compensation** | Smith predictor and variants; brings the discrete internal-model and observer utilities with it | next |
-| selector, ratio, split-range | the classical structural repertoire beyond cascade and feedforward | |
-| MIMO and interaction | quadruple tank, RGA pairing, decentralised control | |
-| model predictive control | *conditional* — added if it fits the `Controller` abstraction using the extension points in [ARCHITECTURE.md](ARCHITECTURE.md), not as a headline goal | |
-
-System identification is deliberately out of scope for now; the package will
-come back when there is something to put in it.
+| 1 | harness, FOPDT tank, ON/OFF, PID, SIMC | done |
+| 1+ | integrating / high-order / inverse-response / cascade plants; cascade, feedforward, velocity-form and PWM controllers; thirteen tuning rules; Ms robustness analysis; relay auto-tuning | done |
+| 2 | linear MPC built by hand (prediction matrices → QP in CVXPY); unconstrained MPC must converge to LQR, as a unit test | next |
+| 3 | quadruple tank, RGA pairing, decentralised PID vs multivariable MPC, minimum and non-minimum phase | |
+| 4 | system identification (PRBS, ARX/subspace) and deliberate model mismatch sweeps | |
+| 5 | nonlinear: CSTR with NMPC, grinding circuit with recycle and long dead time, Smith predictor baseline | |
+| 6 | optional: MHE, offset-free MPC, RL contender | |

@@ -7,7 +7,7 @@
     controller can beat. Dead time costs you two different things, and only
     one of them is available to be won back.
 
-    **Reproduce:** `python experiments/exp05_deadtime_sweep.py`
+    **Reproduce:** `python -m experiments.exp05_deadtime_sweep`
 
 ## Why this is the most important phase-1 experiment
 
@@ -17,8 +17,8 @@ This is the setup experiment for everything the project is about. The ratio
 1 — exactly where dead-time compensation and prediction are supposed to earn
 their keep.
 
-Running it *now*, before MPC exists, sets the expectation quantitatively. That
-is the point.
+Running it *before* any dead-time-compensating controller exists sets the
+expectation quantitatively. That is the point.
 
 ## The setup
 
@@ -107,7 +107,7 @@ So dead time costs you two different things:
 
     ---
 
-    No control law recovers it, **MPC included**. In the dead-time-dominant
+    No control law recovers it, however sophisticated. In the dead-time-dominant
     regime there is essentially nothing left to win here: PI is already within
     2 % of the theoretical limit.
 
@@ -121,7 +121,7 @@ So dead time costs you two different things:
 </div>
 
 !!! danger "The falsifiable claim this sets up"
-    Any claim in later phases that a Smith predictor or MPC "handles dead time
+    Any later claim that a Smith predictor or a predictive controller "handles dead time
     better" has to show up in the **second** of those, not the first.
 
     A comparison that reports a smaller peak deviation in the
@@ -136,9 +136,9 @@ dead-time compensation. It is therefore a floor on how well classical feedback
 does, not a ceiling:
 
 - a **Smith predictor** would be the honest classical contender above θ/τ = 1,
-  and is phase 5's baseline;
-- MPC's advantage over both has to be demonstrated against the recovery
-  metric, with the internal model deliberately imperfect (phase 4).
+  and is next on the roadmap;
+- any predictive scheme's advantage has to be demonstrated against the recovery
+  metric, with the internal model deliberately imperfect.
 
 ## The code
 

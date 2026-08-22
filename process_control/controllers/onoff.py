@@ -111,6 +111,11 @@ class TimeProportioningController(Controller):
         phase = (t % self.period) / self.period
         return np.array([self.u_on if phase < self.duty else self.u_off])
 
+    def diagnostics(self) -> dict[str, float]:
+        """The duty cycle is the continuous demand the pulsed output encodes --
+        invisible in ``u``, which only ever shows fully on or fully off."""
+        return {"duty": float(self.duty)}
+
     def describe(self) -> dict:
         return {
             "controller": self.name, "tuning": self.tuning_note,

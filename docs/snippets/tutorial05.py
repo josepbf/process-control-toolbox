@@ -7,14 +7,14 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
 import numpy as np
 
-from src.controllers.base import Controller
-from src.controllers.pid import PIDController
-from src.harness.metrics import format_table, summarize
-from src.harness.plotting import plot_runs
-from src.harness.scenarios import setpoint_and_load
-from src.harness.simulate import run_all
-from src.plants.tank import Tank
-from src.tuning.rules import simc_pi
+from process_control.controllers.base import Controller
+from process_control.controllers.pid import PIDController
+from process_control.harness.metrics import format_table, summarize
+from process_control.harness.plotting import plot_runs
+from process_control.harness.scenarios import setpoint_and_load
+from process_control.harness.simulate import run_all
+from process_control.plants.tank import Tank
+from process_control.tuning.rules import simc_pi
 
 
 class RateLimited(Controller):

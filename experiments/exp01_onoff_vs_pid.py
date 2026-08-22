@@ -29,20 +29,18 @@ Model mismatch is phase 4's problem, and it is introduced there deliberately.
 from __future__ import annotations
 
 import pathlib
-import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import pandas as pd
 
-from src.controllers.onoff import OnOffController
-from src.controllers.pid import PIDController
-from src.harness.metrics import format_table, summarize
-from src.harness.plotting import plot_runs, save_table
-from src.harness.scenarios import setpoint_and_load
-from src.harness.simulate import run_all
-from src.plants.tank import Tank
-from src.tuning.rules import simc_pi, ziegler_nichols_open_loop
+from process_control.controllers.onoff import OnOffController
+from process_control.controllers.pid import PIDController
+from process_control.harness.metrics import format_table, summarize
+from process_control.harness.plotting import plot_runs, save_table
+from process_control.harness.scenarios import setpoint_and_load
+from process_control.harness.simulate import run_all
+from process_control.plants.tank import Tank
+from process_control.tuning.rules import simc_pi, ziegler_nichols_open_loop
 
 RESULTS = pathlib.Path(__file__).resolve().parents[1] / "results"
 

@@ -1,11 +1,24 @@
 # FINDINGS
 
-Running record of what won, what lost, and under what conditions the result
-flipped. Numbers are reproduced by the scripts named against each section.
+What the toolbox demonstrates, quantitatively. Each section is produced by the
+experiment script named against it, and every number here regenerates from a
+fixed seed.
+
+These are not a benchmark of one method against another. They are what the
+components in the toolbox actually do to a process, measured: what a deadband
+costs, what anti-windup is worth, how tuning rules trade performance against
+robustness, where feedback runs out of road as dead time grows, and what a
+structural change like cascade or feedforward buys and charges for. Where a
+comparison appears, it is between classical alternatives, on identical plants,
+scenarios and seeds.
+
+Every result carries a control-effort number alongside its tracking number.
+That is the house rule, and several of the findings below only make sense
+because of it.
 
 ---
 
-## Phase 1 — ON/OFF vs PID on a FOPDT tank
+## Two-position vs PID control on a FOPDT tank
 
 Plant: `Tank(K=1.5, tau=60 s, theta=15 s, Kd=1.0)`, valve 0–100 %, measurement
 noise sigma = 0.15 %, seed 7, dt = 1 s. Dead-time ratio theta/tau = 0.25.
@@ -14,7 +27,7 @@ t = 700 s. Script: `experiments/exp01_onoff_vs_pid.py`.
 
 Both PI tunings come from published rules applied to the **true** plant
 parameters — the most generous possible setting for the baselines. Model
-mismatch is phase 4's job.
+mismatch is a separate question, taken up when identification lands.
 
 | controller | window | IAE | settling (2 %) | overshoot | peak dev | TV(u) | reversals |
 |---|---|---:|---:|---:|---:|---:|---:|
@@ -45,12 +58,13 @@ tuning is the one that survives a valve maintenance review.
 
 **Reported honestly: on this loop there is nothing for MPC to do.** One input,
 one output, no active constraint, a dead-time ratio of 0.25 that a PI handles
-comfortably, and a tracking error already down at the noise floor. Phase 2 has
-to construct a scenario with an *active output constraint* before MPC can show
-anything a PI cannot already do, and phase 3 has to introduce loop interaction.
+comfortably, and a tracking error already down at the noise floor. Nothing
+more elaborate than a PI is warranted here, and the toolbox says so. The
+interesting cases are the ones the later experiments construct: an active
+constraint, severe dead time, or loop interaction.
 Expect PID to remain the right answer for fast SISO loops throughout.
 
-## Phase 1 — integral windup
+## Integral windup
 
 Script: `experiments/exp02_antiwindup.py`. Same plant and same SIMC tuning; the
 valve is mechanically limited to 30 % (so the maximum attainable level is
@@ -81,7 +95,7 @@ exactly the regime where MPC is supposed to be judged.
 
 ---
 
-## Phase 1 — which classical tuning rule is the fair baseline?
+## Choosing a tuning rule: the performance/robustness frontier
 
 Script: `experiments/exp03_tuning_shootout.py`. Ten published PI rules, same
 plant (`K=1.5, tau=60, theta=15`), same scenario, same seed. Each scored on
@@ -130,7 +144,7 @@ and they land at Ms 2.8–3.7 — loops that will oscillate the first time the
 process gain moves. Benchmarking MPC against *those* would be flattering and
 meaningless.
 
-## Phase 1 — relay auto-tuning: how good is the industrial autotune?
+## Relay auto-tuning: how good is the industrial autotune?
 
 Script: `experiments/exp04_relay_autotune.py`. Åström & Hägglund's 1984 relay
 experiment (relay amplitude 10 % of valve travel, hysteresis 0.5 % ≈ 3σ of the
@@ -165,9 +179,9 @@ which is a real result and the reason the button exists. The model-based rule
 still wins: SIMC matches ZN-CL's setpoint tracking at meaningfully better
 robustness, and Tyreus–Luyben — the rule most autotuners actually ship, for
 good reason — pays 2.3× the load-disturbance IAE for its safety. The gap
-between "no model" and "a model" is the thing phase 4 will price properly.
+between "no model" and "a model" is what a mismatch study would price properly.
 
-## Phase 1 — where feedback runs out of road: the dead-time sweep
+## Where feedback runs out of road: the dead-time sweep
 
 Script: `experiments/exp05_deadtime_sweep.py`. τ = 60 s held fixed, θ swept over
 two decades, SIMC PI tuned on the true model each time, identical load
@@ -200,12 +214,12 @@ So dead time costs you two different things:
   left to win here;
 * the **recovery**, which is control, and where all the remaining headroom is.
 
-Any claim in later phases that a Smith predictor or MPC "handles dead time
+Any later claim that a Smith predictor or a predictive controller "handles dead time
 better" has to show up in the second of those, not the first. This sets the
 expectation quantitatively before the contenders arrive, which is the point of
 running it now.
 
-## Phase 1 — the surge tank: the metric decides the winner
+## The surge tank: the metric decides the winner
 
 Script: `experiments/exp06_averaging_level.py`. Integrating level process
 (`k' = −0.02 %/s per % valve`, θ = 10 s), outflow manipulated, inflow steps as
@@ -234,7 +248,7 @@ bounds how close a loop is to instability; it says nothing about whether the
 loop is doing its job. Robustness and performance both have to be reported, and
 this row is the counterexample to reading either one alone.
 
-## Phase 1 — cascade control: buying information, not gain
+## Cascade control: buying information, not gain
 
 Script: `experiments/exp07_cascade.py`. Fast inner stage (valve → flow,
 τ = 5 s, measured immediately) feeding a slow outer stage (flow → temperature,
@@ -261,7 +275,7 @@ the same sleight of hand this project is trying to avoid for MPC.
 The asymmetry that makes it work is the measurement, not the dynamics: the
 primary is reported 20 s late and the secondary is not.
 
-## Phase 1 — feedforward: the value of a measured disturbance
+## Feedforward: the value of a measured disturbance
 
 Script: `experiments/exp08_feedforward.py`. Valve path `K=1.5, τ=60 s, θ=15 s`;
 disturbance path `Kd=1.0, τ_d=15 s, θ_d=45 s` — so the ideal compensator is a
@@ -290,7 +304,8 @@ Three qualifications, all of which apply directly to MPC later:
 * **It is open loop, so model error is not corrected.** A 30 % error in the
   feedforward gain gives back half the benefit (5.4× → 2.8×). What saves it is
   the feedback controller underneath, which still removes the offset. This is
-  the same argument that will be made for MPC's internal model in phase 4.
+  the same argument that applies to any model-based scheme: the model buys
+  speed, the feedback keeps it honest.
 * **It costs 5.8× the valve travel.** The compensator differentiates a noisy
   disturbance measurement, and the lead-lag has a high-frequency gain of
   τ_p/τ_d = 4. Perfect rejection at the cost of a valve that never stops
@@ -301,7 +316,7 @@ disturbance beats the valve to the output, the ideal compensator is non-causal,
 and the same design delivers 1.4× instead of 5.4×. Knowing which case you are
 in is most of the engineering.
 
-## Phase 1 — inverse response: where more gain digs the hole deeper
+## Inverse response: where more gain digs the hole deeper
 
 Script: `experiments/exp09_inverse_response.py`. Drum-level model: a slow
 positive path and a fast negative one, net gain 1.0, RHP zero at T_z = 22.5 s.
@@ -338,26 +353,32 @@ A 10× reduction in usable gain and a 6× worse disturbance peak, with the plant
 gain and both time constants untouched. **An RHP zero costs what dead time
 costs**, for the same underlying reason — the inability to act on information
 you do not yet have — which is why the half rule is right to treat them
-identically. This is phase 3's non-minimum-phase result in miniature, isolated
-on a SISO loop before loop interaction is layered on top.
+identically. It is the non-minimum-phase problem in miniature, isolated on a
+SISO loop before loop interaction is layered on top.
 
 ---
 
-## Running summary: what phase 1 establishes before MPC arrives
+## Running summary: what the toolbox demonstrates
 
-1. **The PID baseline is SIMC (τ_c = θ), with AMIGO as the robust alternative**,
-   chosen on the stated grounds of exp03 rather than after seeing the MPC
-   results.
-2. **Structure beats tuning, repeatedly.** Anti-windup 16×, cascade 7.7×,
-   feedforward 5.4× — every one of them larger than the entire spread of ten
-   tuning rules on the same plant (which was about 4× on load IAE). The
-   interesting question for MPC is therefore not "can it beat a PID" but
-   "can it beat a *well-structured* classical scheme", and phases 3–5 have to
-   be set up that way.
-3. **The peak deviation after a disturbance is mostly physics.** In the
-   dead-time-dominant regime PI is already within 2 % of the theoretical floor.
-   MPC's opportunity is in the recovery, in constraint handling, and in
-   multivariable coordination — not in the peak.
-4. **Every improvement so far cost valve travel**: cascade 2.1×, feedforward
-   5.8×, aggressive tuning 5.7×. No comparison in this project is reported
-   without the effort column.
+1. **Tuning is a frontier, not an optimum.** Ten published PI rules on one
+   plant span 4x in load-disturbance IAE and 5.7x in valve travel, and they
+   line up monotonically against maximum sensitivity Ms. Picking a rule is a
+   decision about how much model error the plant will develop, and the toolbox
+   reports both axes so the decision is visible.
+2. **Structure beats tuning, repeatedly.** Anti-windup is worth 16x on recovery
+   IAE, cascade 7.7x on the disturbance it is designed for, feedforward 5.4x —
+   each larger than the entire spread of ten tuning rules on the same plant.
+   When a loop is not performing, the question is usually which structure is
+   missing, not which gain is wrong.
+3. **Some of the loss is physics.** After a load step, no controller can act
+   for one dead time. In the dead-time-dominant regime a SIMC PI is already
+   within 2 %% of that floor on peak deviation, while the *recovery* degrades
+   8x. Knowing which part of a loss is recoverable is what stops effort being
+   spent where it cannot pay.
+4. **The metric decides the winner.** On a surge tank, tight and averaging
+   level control rank exactly opposite depending on whether level deviation or
+   outflow variability is the objective — and the controller with the best
+   robustness number is the one that breaches the alarm band. No single number
+   is sufficient.
+5. **Everything costs valve travel.** Cascade 2.1x, feedforward 5.8x,
+   aggressive tuning 5.7x. Nothing in this repository is reported without it.

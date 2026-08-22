@@ -1,7 +1,7 @@
 # Tutorial 5: writing a controller
 
 A `Controller` subclass supplies two methods and three declarations. That is
-the whole interface — it is deliberately small, because from phase 2 on it has
+the whole interface — it is deliberately small, because it has
 to hold an MPC as comfortably as it holds an ON/OFF switch.
 
 ## The contract

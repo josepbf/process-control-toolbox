@@ -3,12 +3,12 @@
 import numpy as np
 import pytest
 
-from src.controllers.base import Controller
-from src.controllers.pid import PIDController
-from src.harness.metrics import summarize
-from src.harness.scenarios import Scenario, constant, pulse, staircase
-from src.harness.simulate import run_all, simulate
-from src.plants.tank import Tank
+from process_control.controllers.base import Controller
+from process_control.controllers.pid import PIDController
+from process_control.harness.metrics import summarize
+from process_control.harness.scenarios import Scenario, constant, pulse, staircase
+from process_control.harness.simulate import run_all, simulate
+from process_control.plants.tank import Tank
 
 
 class ConstantController(Controller):
@@ -107,3 +107,68 @@ def test_disturbance_reaches_the_plant():
     quiet = simulate(plant, ConstantController(30.0), _scenario())
     upset = simulate(plant, ConstantController(30.0), scenario)
     assert upset["y"].iloc[-1] < quiet["y"].iloc[-1] - 5.0
+
+
+# ----------------------------------------------------------------------
+# controller diagnostics
+# ----------------------------------------------------------------------
+def test_controllers_publish_nothing_by_default():
+    df = simulate(Tank(), ConstantController(30.0), _scenario())
+    assert not [c for c in df.columns if c.startswith("diag_")]
+
+
+def test_diagnostics_are_logged_under_a_namespaced_column():
+    class Chatty(ConstantController):
+        def diagnostics(self):
+            return {"half_u": self.u / 2.0}
+
+    df = simulate(Tank(), Chatty(30.0), _scenario())
+    assert "diag_half_u" in df.columns
+    assert (df["diag_half_u"] == 15.0).all()        # including the final row
+
+
+def test_diagnostic_columns_do_not_disturb_the_metrics():
+    """The diag_ prefix must stay clear of the y/u/d/sp signal selection, or a
+    diagnostic could silently be picked up as a process signal."""
+    class Confusing(ConstantController):
+        def diagnostics(self):
+            return {"u_extra": 1.0, "y_hat": 2.0, "d_model": 3.0, "sp_internal": 4.0}
+
+    plain = summarize({"c": simulate(Tank(), ConstantController(30.0), _scenario())})
+    chatty = summarize({"c": simulate(Tank(), Confusing(30.0), _scenario())})
+    # Solve time is wall clock and varies run to run; everything else must match.
+    cols = [c for c in plain.columns if not c.startswith("solve_ms")]
+    assert plain[cols].equals(chatty[cols])
+
+
+def test_cascade_feedforward_and_pwm_publish_their_internal_signals():
+    """The three controllers that had informative internals invisible in the log."""
+    from process_control.controllers.cascade import CascadeController
+    from process_control.controllers.feedforward import FeedforwardPID
+    from process_control.controllers.onoff import TimeProportioningController
+    from process_control.plants.cascade_process import CascadeProcess
+    from process_control.tuning.rules import simc_pi
+
+    casc_plant = CascadeProcess(noise_std=(0.0, 0.0))
+    inner, outer = simc_pi(**casc_plant.inner_fopdt), simc_pi(**casc_plant.outer_fopdt)
+    cascade = CascadeController(
+        primary=PIDController(**outer.as_kwargs(), dt=1.0, u_min=0.0, u_max=100.0, u0=25.0),
+        secondary=PIDController(**inner.as_kwargs(), dt=1.0, u_min=0.0, u_max=100.0, u0=25.0),
+    )
+    assert "inner_setpoint" in cascade.diagnostics()
+
+    tank = Tank(K=1.5, Kd=1.0, tau_d=15.0, theta_d=45.0)
+    ff = FeedforwardPID(
+        feedback=PIDController(Kc=1.0, Ti=60.0, dt=1.0, u0=20.0),
+        K_p=1.5, K_d=1.0, tau_p=60.0, tau_d=15.0, theta_p=15.0, theta_d=45.0,
+        dt=1.0, u_min=0.0, u_max=100.0,
+    )
+    assert "u_feedforward" in ff.diagnostics()
+
+    pwm = TimeProportioningController(
+        PIDController(Kc=1.0, Ti=60.0, dt=1.0, u0=20.0), period=20.0, dt=1.0
+    )
+    assert "duty" in pwm.diagnostics()
+
+    df = simulate(tank, ff, _scenario(disturbance=constant(-12.0)))
+    assert (df["diag_u_feedforward"].abs() > 0).any()   # it actually contributed

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.harness.metrics import (
+from process_control.harness.metrics import (
     iae,
     ise,
     itae,

@@ -3,16 +3,16 @@
 import numpy as np
 import pytest
 
-from src.controllers.cascade import CascadeController
-from src.controllers.feedforward import FeedforwardPID, LeadLag
-from src.controllers.onoff import TimeProportioningController
-from src.controllers.pid import PIDController, VelocityPIDController
-from src.harness.metrics import compute_metrics
-from src.harness.scenarios import Scenario, constant, staircase
-from src.harness.simulate import simulate
-from src.plants.cascade_process import CascadeProcess
-from src.plants.tank import Tank
-from src.tuning.rules import simc_pi
+from process_control.controllers.cascade import CascadeController
+from process_control.controllers.feedforward import FeedforwardPID, LeadLag
+from process_control.controllers.onoff import TimeProportioningController
+from process_control.controllers.pid import PIDController, VelocityPIDController
+from process_control.harness.metrics import compute_metrics
+from process_control.harness.scenarios import Scenario, constant, staircase
+from process_control.harness.simulate import simulate
+from process_control.plants.cascade_process import CascadeProcess
+from process_control.plants.tank import Tank
+from process_control.tuning.rules import simc_pi
 
 
 # ----------------------------------------------------------------------
@@ -264,7 +264,7 @@ def test_time_proportioning_beats_plain_onoff_on_ripple():
     """Switching fast compared with the process lets the process average the
     pulses, which is why a relay-output temperature controller can hold a
     fraction of a degree while plain ON/OFF limit-cycles."""
-    from src.controllers.onoff import OnOffController
+    from process_control.controllers.onoff import OnOffController
 
     dt, period = 0.5, 5.0
     plant = Tank(K=1.5, tau=60.0, theta=15.0, h0=30.0, noise_std=0.0, seed=1)

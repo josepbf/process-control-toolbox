@@ -126,6 +126,12 @@ class FeedforwardPID(Controller):
 
         return np.array([float(np.clip(u_fb + ff, self.u_min, self.u_max))])
 
+    def diagnostics(self) -> dict[str, float]:
+        """Splitting u into its feedforward and feedback shares is the whole
+        point of the structure: it shows how much of the correction was
+        anticipated and how much had to be cleaned up after the fact."""
+        return {"u_feedforward": float(self.last_ff)}
+
     def describe(self) -> dict:
         return {
             "controller": self.name,

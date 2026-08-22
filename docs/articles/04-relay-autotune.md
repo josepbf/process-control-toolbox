@@ -6,7 +6,7 @@
     autotune gets you into the right neighbourhood with no model at all —
     and the model-based rule still wins.
 
-    **Reproduce:** `python experiments/exp04_relay_autotune.py`
+    **Reproduce:** `python -m experiments.exp04_relay_autotune`
 
 ## What the experiment is
 
@@ -89,16 +89,16 @@ at, and Tyreus–Luyben is the rule that does that.
     the two conservatisms multiply rather than cancel.
 
     This is a general property of stacking safety margins, and it is worth
-    keeping in mind when an MPC's model is identified from plant data and then
-    handed to a controller that also has a robustness weight.
+    keeping in mind when a model is identified from plant data and then handed
+    to a controller that also carries a robustness weight.
 
-## What this sets up for later phases
+## What this sets up
 
 The gap between "no model" and "a model" is visible here as roughly a factor
 of two in load-disturbance IAE, on a plant where the model was exact.
 
-**Phase 4 prices that gap properly**, with deliberate model mismatch: PRBS
-identification, ARX and subspace fits, and mismatch sweeps. The question there
+**A mismatch study would price that gap properly**, with deliberate model
+error: PRBS identification, ARX and subspace fits, and mismatch sweeps. The question there
 is the one this experiment only gestures at — *how good does a model have to
 be before it is worth having?*
 

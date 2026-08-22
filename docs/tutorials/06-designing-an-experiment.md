@@ -11,7 +11,7 @@ results knows what they are looking at.
 
 Reproduce with:
 
-    python experiments/expNN_name.py
+    python -m experiments.expNN_name
 
 Why this experiment exists, what is held fixed, what is varied, and what to
 look for in the output. Long. This docstring is the article.
@@ -184,7 +184,8 @@ floor = abs(plant.Kd * D_LOAD) * (1.0 - np.exp(-theta / TAU))
 The gap between the achieved curve and that line is the headroom a better
 controller could in principle recover. Where they meet, the loss is physics.
 This is what turns "MPC handles dead time better" from a slogan into a
-falsifiable claim — and it is why experiment 5 exists *before* phase 2 rather
+falsifiable claim — and it is why experiment 5 exists *before* any
+dead-time-compensating controller rather
 than after it.
 
 ## Reporting
@@ -210,7 +211,7 @@ treatment.
     > carries no information about it, and the cascade is marginally *worse*
     > there. That is the correct shape for a structural change — it buys a
     > specific thing, and reporting only the case where it wins would be the
-    > same sleight of hand this project is trying to avoid for MPC.
+    > same sleight of hand this toolbox is built to make hard.
 
 ## Testing an experiment
 
