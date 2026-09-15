@@ -76,7 +76,7 @@ import numpy as np
 
 from ..models.discrete import DiscreteModel
 from ..models.observer import KalmanObserver, augment_disturbance
-from ..solvers import SOLVED, get_solver
+from ..solvers import INFEASIBLE, MAX_ITER, SOLVED, get_solver
 from .base import Controller
 
 #: qp_status codes, published as a diagnostic so a run that limped is visible.
@@ -328,6 +328,7 @@ class LinearMPC(Controller):
         self._iters = 0
         self._status = STATUS_SOLVED
         self._fallbacks = 0
+        self._unconverged = 0
         self._initialised = False
 
     def compute(self, y, setpoint, t: float, d=None, sp_preview=None) -> np.ndarray:
@@ -364,12 +365,23 @@ class LinearMPC(Controller):
         if result.status == SOLVED:
             z = result.z
             self._status = STATUS_SOLVED
+        elif result.status == MAX_ITER:
+            # Running out of iterations is not the same as having no answer.
+            # Both backends hand back their last iterate, and it is a far better
+            # move than the shifted plan: OSQP short of its 1e-8 tolerance is
+            # typically within 1e-3 of the exact solution, where the shifted plan
+            # is a whole sample stale. Substituting the plan here is what turns a
+            # small numerical shortfall into a visibly different closed loop, so
+            # the iterate is used and the shortfall is reported instead.
+            z = result.z
+            self._status = STATUS_MAX_ITER
+            self._unconverged += 1
         else:
             # Never raise inside compute(). A traceback at sample 812 of a
             # 6000-run sweep destroys the sweep; a held move degrades one sample
             # and shows up in the metrics, where it can be seen and reported.
-            z = self._warm_start if result.status != "infeasible" else np.zeros(self._n_z)
-            self._status = STATUS_MAX_ITER if result.status == "max_iter" else STATUS_FALLBACK
+            z = np.zeros(self._n_z) if result.status == INFEASIBLE else self._warm_start
+            self._status = STATUS_FALLBACK
             self._fallbacks += 1
 
         du = z[: self.M]
@@ -440,7 +452,10 @@ class LinearMPC(Controller):
         to setpoint after a load change. ``slack`` says how much of the declared
         output band the optimiser chose to give up, and the ``qp_`` pair keeps
         the numerics in the results table: a controller that fell back forty
-        times and still won is not a controller that won.
+        times and still won is not a controller that won. ``qp_status`` separates
+        the two ways that can happen -- ``STATUS_MAX_ITER`` means the solver's own
+        iterate was used but had not met its tolerance, ``STATUS_FALLBACK`` that
+        there was no iterate to use and the shifted plan was substituted.
         """
         return {
             "d_hat": float(self._d_hat[0]) if self._d_hat.size else 0.0,
@@ -479,9 +494,12 @@ class LinearMPC(Controller):
             "model": self.model.describe(),
             "observer": self.observer.describe(),
             # Not bookkeeping: a run solved by OSQP at 1e-3 is not the same run
-            # as one from the exact active-set solver.
+            # as one from the exact active-set solver. "fallbacks" counts the
+            # samples whose QP answer was discarded; "unconverged" the samples
+            # where it was used but had not reached the solver's tolerance.
             "solver": self._solver.name,
             "fallbacks": self._fallbacks,
+            "unconverged": self._unconverged,
         }
 
     # ------------------------------------------------------------------
