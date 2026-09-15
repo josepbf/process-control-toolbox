@@ -13,9 +13,11 @@ demonstrates what it does and what it costs.
 Comparing control strategies is something the toolbox is *used for* — see
 [FINDINGS.md](FINDINGS.md) — not what it is for.
 
-**Status.** Five plants, six controllers, thirteen tuning rules, relay
-auto-tuning, frequency-domain robustness analysis, and nine reproducible
-experiments, with 123 tests. Dead-time compensation is next.
+**Status.** Five plants, eight controllers, thirteen PID tuning rules plus a
+cited MPC rule, relay auto-tuning, frequency-domain robustness analysis, and
+eleven reproducible experiments, with 234 tests. Dead-time compensation and
+linear MPC have landed — the latter dependency-free, as one more `Controller`.
+The classical structural repertoire (selector, ratio, split-range) is next.
 
 ## Documentation
 
@@ -115,7 +117,7 @@ process_control/
     analysis.py             Ms, gain and phase margin, analytic ultimate gain
     relay.py                Astrom-Hagglund relay auto-tuning
 experiments/              one script per reported result
-tests/                    pytest suite (123 tests)
+tests/                    pytest suite (234 tests)
 results/                  generated figures and CSVs (gitignored)
 docs/                     documentation site (MkDocs Material)
 tools/                    documentation asset build
@@ -199,6 +201,8 @@ the experiment that demonstrate it.
 | harness and metrics | closed-loop runner, scenarios, tracking/effort/constraint/computation metrics, plotting | done |
 | plants | FOPDT tank, integrating surge tank, series lags, inverse response, two-stage cascade | done |
 | controllers | ON/OFF, time-proportioning, PID (positional and velocity), cascade, feedforward | done |
+| dead-time compensation | Smith predictor, discrete internal model, Kalman observer | done |
+| model predictive control | linear MPC as a condensed QP, soft output constraints, preview | done |
 | tuning and analysis | thirteen named rules, half-rule reduction, Ms/GM/PM analysis, relay auto-tuning | done |
 | **dead-time compensation** | Smith predictor and variants; brings the discrete internal-model and observer utilities with it | next |
 | selector, ratio, split-range | the classical structural repertoire beyond cascade and feedforward | |

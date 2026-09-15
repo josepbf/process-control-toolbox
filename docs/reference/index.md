@@ -9,9 +9,11 @@ reading rather than only searching.
 | module | what is in it |
 |---|---|
 | [Plants](plants.md) | `Plant` ABC and the five concrete processes |
+| [Models](models.md) | `DiscreteModel`, discretisation, dead-time and disturbance augmentation, the observer |
 | [Controllers](controllers.md) | `Controller` ABC, ON/OFF, PWM, PID, velocity PID, cascade, feedforward |
 | [Harness](harness.md) | `simulate`, `run_all`, scenarios, metrics, plotting |
-| [Tuning](tuning.md) | thirteen rules, robustness analysis, relay auto-tuning |
+| [Tuning](tuning.md) | thirteen rules, robustness analysis, relay auto-tuning, MPC tuning |
+| [Solvers](solvers.md) | the single delegation boundary: `solve_qp` and its backends |
 
 ## The two interfaces in full
 

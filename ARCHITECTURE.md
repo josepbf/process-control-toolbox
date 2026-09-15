@@ -67,23 +67,45 @@ The `diag_` prefix is not decoration: `metrics._cols()` selects signals by
 `y`/`u`/`d`/`sp` prefix, and namespacing keeps a diagnostic from ever being
 mistaken for a process signal.
 
-## Extension points that are designed but not built
+## The second capability flag: `uses_preview`
 
-Deliberately **not** implemented, because nothing uses them yet and speculative
-hooks are the same smell as an empty package. Recorded here so the cost of
-adding them is known rather than guessed:
+Some control laws read *future* setpoints. Declaring `uses_preview = True` and a
+`preview_horizon` makes the harness pass `sp_preview=` to `compute()`: an array
+whose row `j` is the setpoint at `t + j*dt`, so row 0 is the setpoint the
+controller would have seen anyway.
 
-**`uses_preview`** — future setpoints over a horizon, following the flag
-pattern exactly. Justified by classical needs on their own: setpoint ramping
-and kiln heat-up profiles are preview problems. Note that preview is an
-information advantage, so a controller using it must be compared against a
-classical scheme given the equivalent (setpoint feedforward), or the asymmetry
-must be stated.
+It is justified by classical needs on its own — setpoint ramping and kiln
+heat-up profiles are preview problems. And it carries the same obligation as
+`uses_measured_disturbance`: preview is an information advantage, so a
+controller using it must be compared against a classical scheme given the
+equivalent (a ramped setpoint, or setpoint feedforward), or the asymmetry must
+be stated. It is recorded in `df.attrs["uses_preview"]` for exactly that
+reason.
 
-**`snapshot()`** — vector-valued output per sample (a predicted trajectory),
-which does not fit the tidy one-row-per-sample log. Intended design: the
-harness captures it every `snapshot_stride` samples into `df.attrs`, leaving
-the DataFrame scalar. Needed by anything that plots a receding horizon.
+The harness assembles the preview **before** starting the solve-time clock.
+Building it is the harness's work, not the controller's, and `solve_ms_mean` is
+a reported metric.
+
+## The snapshot channel
+
+`diagnostics()` is scalars only, because the log is one row per sample. A
+receding-horizon controller also computes something that log cannot hold: the
+whole predicted output trajectory and the whole planned move sequence.
+
+```python
+def snapshot(self) -> dict[str, np.ndarray] | None:
+    return {"y_pred": ..., "u_plan": ...}
+```
+
+`simulate(..., snapshot_stride=n)` calls it every `n` samples and collects the
+results in `df.attrs["snapshots"]`, leaving the DataFrame scalar and the metrics
+untouched. Off by default. `plot_horizon()` draws the result: each prediction
+fanned forward from the sample it was made at, over the trace of what actually
+happened.
+
+Snapshots are diagnostics, not results. `df.attrs` does not survive
+`pd.concat` and does not reach a CSV, so nothing in `metrics` may depend on
+them.
 
 ## What a model-based controller will need
 
@@ -104,12 +126,23 @@ the roadmap on its own classical merit. They get built there.
 ## Does this enable MPC?
 
 Yes, and the answer is structural rather than optimistic. MPC needs three
-things beyond the current interface: a state estimate, optional setpoint
-preview, and a way to publish predicted trajectories. Each is additive, each
-follows a pattern already working in the codebase, and each is independently
-required by a classical component ahead of MPC in the queue. `y_min`/`y_max`
-already exist on the plant as reporting-only bands with violation metrics, so
-the constraint-handling comparison needs no new machinery at all.
+things beyond the original interface: a state estimate, optional setpoint
+preview, and a way to publish predicted trajectories. **Two of the three are now
+built** — `uses_preview` and `snapshot()` above — each additive, each following
+a pattern already working in the codebase, and each justified by a classical
+need of its own. The third, the observer, arrives with the Smith predictor.
+`y_min`/`y_max` already exist on the plant as reporting-only bands with
+violation metrics, so the constraint-handling comparison needs no new machinery
+at all.
+
+The one place MPC is allowed to reach outside the toolbox is the **numerical QP
+solve**, behind a single `solve_qp` boundary with a dependency-free default.
+Building the prediction matrices, the disturbance model and the constraint rows
+is toolbox code, because that is what has to be read when a result looks too
+good. Backend selection never probes for whatever happens to be pip installed —
+a controller whose numerics depend on the machine is a controller whose results
+are not comparable — and the backend that actually solved a run is recorded in
+`df.attrs["controller_info"]["solver"]`.
 
 MPC would arrive as one more `Controller` — not as a reason to reshape the
 toolbox around it.

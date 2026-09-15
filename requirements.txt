@@ -1,12 +1,22 @@
-# Phase 1 (harness, plants, classical controllers). Python 3.11+.
+# Phase 1-2 (harness, plants, classical controllers, models, linear MPC).
+# Python 3.11+.
 #
-# Later phases add, as they are reached:
-#   cvxpy, osqp            -- phase 2, linear MPC as a QP
-#   casadi, do-mpc         -- phase 5, nonlinear MPC
+# Phase 2 landed dependency-free. The QP is built *and* solved here, in numpy
+# and scipy: building the prediction matrices and constraint rows is the point
+# of the exercise, and the dense active-set solver behind solvers.solve_qp needs
+# nothing that was not already installed. The optional accelerators and
+# cross-checks live in extras, never in the default install:
+#
+#   osqp, qpsolvers        -- faster QP backends            [osqp] [qp]
+#   cvxpy                  -- an independent transcription of the same problem,
+#                             used by the cross-check tests only     [cvxpy]
+#   casadi, do-mpc         -- phase 5, nonlinear MPC (LGPL-3.0)      [nmpc]
 #   sippy or sysidentpy    -- phase 4, system identification
 #   control, simple-pid    -- cross-checks against reference implementations
-# They are deliberately not installed yet: nothing in phase 1 should depend on
-# a solver, and the hand-built MPC of phase 2 is the point of the exercise.
+#
+# Nothing in the default test run imports any of them, and
+# tests/test_solvers.py::test_the_toolbox_imports_with_no_optional_solver_installed
+# is what keeps that true.
 
 numpy==2.5.2
 scipy==1.18.0

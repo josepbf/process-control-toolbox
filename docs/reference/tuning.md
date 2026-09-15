@@ -85,3 +85,16 @@ means.
 ::: process_control.tuning.relay.relay_autotune
 
 ::: process_control.tuning.relay.RelayResult
+
+---
+
+## MPC tuning
+
+Fairness rule 1 applies to model predictive control exactly as it applies to a
+PI, and an MPC has more knobs than a PI rather than fewer.
+
+::: process_control.tuning.mpc_rules.MPCTuning
+
+::: process_control.tuning.mpc_rules.shridhar_cooper
+
+::: process_control.tuning.mpc_rules.settling_horizon

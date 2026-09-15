@@ -28,6 +28,24 @@ class Controller(ABC):
     #: can quietly benefit from information the others do not have.
     uses_measured_disturbance: bool = False
 
+    #: Set True by controllers that read *future* setpoints: MPC, but also
+    #: setpoint ramping and kiln heat-up profiles, which are preview problems on
+    #: their own classical merit. The harness then passes ``sp_preview=`` to
+    #: :meth:`compute`, an array of shape ``(preview_horizon + 1, n_outputs)``
+    #: whose row j is the setpoint at ``t + j*dt`` -- so ``sp_preview[0]`` is
+    #: always the setpoint the controller would have seen anyway.
+    #:
+    #: Like ``uses_measured_disturbance`` this is a declaration, not a
+    #: convenience. Preview is an information advantage, so a controller that
+    #: takes it must be compared against a classical scheme given the equivalent
+    #: (a ramped setpoint, or setpoint feedforward), or the asymmetry must be
+    #: stated. It is recorded in the run metadata for exactly that reason.
+    uses_preview: bool = False
+
+    #: How many future samples this controller wants. Ignored unless
+    #: ``uses_preview``. Set per instance -- an MPC sets it to its horizon N.
+    preview_horizon: int = 0
+
     #: How this controller was tuned, e.g. "SIMC (Skogestad 2003), tau_c = theta".
     #: Fairness rule 1: every baseline must carry a named, cited tuning rule.
     tuning_note: str = "unspecified"
@@ -55,6 +73,25 @@ class Controller(ABC):
         default) if the controller has nothing to add.
         """
         return {}
+
+    def snapshot(self) -> dict[str, np.ndarray] | None:
+        """Vector-valued internals for this sample, e.g. a predicted trajectory.
+
+        :meth:`diagnostics` is scalars only, because the log is one row per
+        sample. A receding-horizon controller also computes something a tidy
+        log cannot hold: the whole predicted output trajectory and the whole
+        planned sequence of moves. Those go here instead.
+
+        The harness calls this every ``snapshot_stride`` samples -- never, by
+        default -- and stores what comes back in ``df.attrs["snapshots"]``,
+        leaving the DataFrame scalar and the metrics untouched. Return ``None``
+        (the default) if the controller has nothing to capture.
+
+        Snapshots are diagnostics, not results: ``df.attrs`` does not survive
+        ``pd.concat`` and does not reach a CSV, so nothing in ``metrics`` may
+        ever depend on them.
+        """
+        return None
 
     def describe(self) -> dict:
         """Tuning record written alongside the metrics of every run."""

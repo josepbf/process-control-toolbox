@@ -20,6 +20,23 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
 
+# Optional QP accelerators and cross-checks. Nothing in the default install or
+# the default test run imports any of these: the linear MPC builds and solves
+# its own QP in numpy and scipy. Backends are opt-in by name -- solvers."auto"
+# never probes for whatever happens to be installed, because a controller whose
+# numerics depend on the machine is not comparable across machines.
+osqp = ["osqp>=1.0"]
+qp = ["qpsolvers>=4.0", "quadprog>=0.1.12"]
+cvxpy = ["cvxpy>=1.5"]
+# An independent transcription of the same optimisation problem, for the
+# cross-check tests only.
+crosscheck = ["cvxpy>=1.5"]
+# Phase 5, nonlinear MPC. do-mpc is LGPL-3.0: dynamically imported, never
+# vendored, and deliberately kept out of "all" -- it pulls a large CasADi/IPOPT
+# stack that nothing in the default test run uses.
+nmpc = ["casadi>=3.6", "do-mpc>=5.0"]
+all = ["process-control-toolbox[osqp,qp,cvxpy,crosscheck]"]
+
 [tool.setuptools.packages.find]
 include = ["process_control*"]
 

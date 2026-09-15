@@ -78,6 +78,8 @@ and when it deliberately returns `NaN`.
 
 ::: process_control.harness.plotting.plot_runs
 
+::: process_control.harness.plotting.plot_horizon
+
 ::: process_control.harness.plotting.plot_tradeoff
 
 ::: process_control.harness.plotting.plot_sweep

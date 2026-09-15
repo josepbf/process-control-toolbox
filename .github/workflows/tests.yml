@@ -1,0 +1,58 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # The default install is numpy, scipy, matplotlib, pandas -- and must stay
+  # that way. This job is what proves the optional-backend import guards are
+  # where they claim to be: every optional test must SKIP here, never error.
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install the package and nothing else
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+      - name: Run the suite
+        run: pytest -q
+      - name: Every experiment still runs end to end
+        run: |
+          for script in experiments/exp*.py; do
+            echo "--- $script"
+            python "$script" > /dev/null
+          done
+
+  # The optional QP accelerators and the cvxpy cross-check. do-mpc is not here
+  # on purpose: installing CasADi on every pull request is not worth the
+  # minutes, and nothing in the default suite imports it.
+  extras:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install with every optional backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev,all]'
+      - name: Run the suite, cross-checks included
+        run: pytest -q

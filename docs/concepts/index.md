@@ -36,4 +36,9 @@ it is shaped the way it is, and what the ideas behind it mean.
     Maximum sensitivity Ms, what it bounds, and the counterexample that shows
     why it must never be read on its own.
 
+-   __[Model predictive control](mpc.md)__
+
+    The condensed QP, why offset-free tracking needs a disturbance state, why
+    output constraints are soft — and the four things MPC is *not*.
+
 </div>

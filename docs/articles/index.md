@@ -72,6 +72,20 @@ run yourself in a few seconds. The condensed running record is in
 
     `exp09_inverse_response.py`
 
+-   __[10. The Smith predictor](10-smith-predictor.md)__
+
+    Dead-time compensation worth 2× where feedback is worst — and 7–13× *worse*
+    than the PI it replaced when θ is underestimated threefold.
+
+    `exp10_smith_predictor.py`
+
+-   __[11. Model predictive control](11-mpc.md)__
+
+    It ties a well-tuned PI when nothing binds, and does the one thing a PI
+    structurally cannot when something does.
+
+    `exp11_mpc_constraints.py`
+
 </div>
 
 ## The through-line
@@ -97,3 +111,9 @@ Read in order, the nine articles build one argument:
 Which sets the bar for anything added later: not *can it beat a PID*, but
 **can it beat a well-structured classical scheme** — a cascade with
 feedforward, correct anti-windup, and a cited tuning rule.
+
+6. And when a model-based controller finally arrives
+   ([10](10-smith-predictor.md), [11](11-mpc.md)), it clears that bar in
+   exactly one place — **constraints** — ties on tracking, and brings a new
+   exposure of its own: everything it gains, it gains on the strength of a
+   model being right.

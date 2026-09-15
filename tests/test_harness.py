@@ -141,6 +141,98 @@ def test_diagnostic_columns_do_not_disturb_the_metrics():
     assert plain[cols].equals(chatty[cols])
 
 
+# ----------------------------------------------------------------------
+# setpoint preview
+# ----------------------------------------------------------------------
+class Previewing(ConstantController):
+    """Declares preview and records what it was handed."""
+
+    uses_preview = True
+
+    def __init__(self, u, horizon=5):
+        super().__init__(u)
+        self.preview_horizon = horizon
+        self.seen = []
+
+    def compute(self, y, setpoint, t, sp_preview=None):
+        self.seen.append((t, None if sp_preview is None else sp_preview.copy()))
+        return np.array([self.u])
+
+
+def test_controllers_do_not_receive_preview_unless_they_declare_it():
+    """ConstantController.compute takes no sp_preview, so passing one would be a
+    TypeError. The default-off flag is what keeps every existing controller
+    untouched."""
+    df = simulate(Tank(), ConstantController(30.0), _scenario())
+    assert df.attrs["uses_preview"] is False
+    assert df.attrs["preview_horizon"] == 0
+
+
+def test_a_preview_declaring_controller_is_handed_future_setpoints():
+    ctrl = Previewing(30.0, horizon=5)
+    scenario = Scenario(
+        "s", dt=1.0, t_final=200.0, setpoint=staircase([(0.0, 10.0), (50.0, 20.0)])
+    )
+    simulate(Tank(), ctrl, scenario)
+
+    t, preview = ctrl.seen[47]                       # three samples before the step
+    assert t == 47.0
+    assert preview.shape == (6, 1)
+    assert preview[0, 0] == 10.0                     # row 0 is always the current setpoint
+    assert preview[2, 0] == 10.0                     # t = 49, still before
+    assert preview[3, 0] == 20.0                     # t = 50, the step is visible
+
+
+def test_the_preview_declaration_is_recorded_in_the_run_metadata():
+    """The asymmetry has to be readable from the run, not only from the class."""
+    df = simulate(Tank(), Previewing(30.0, horizon=7), _scenario())
+    assert df.attrs["uses_preview"] is True
+    assert df.attrs["preview_horizon"] == 7
+
+
+# ----------------------------------------------------------------------
+# horizon snapshots
+# ----------------------------------------------------------------------
+class Snapping(ConstantController):
+    """Publishes a vector the one-row-per-sample log cannot hold."""
+
+    def snapshot(self):
+        return {"y_pred": np.arange(4, dtype=float) + self.u}
+
+
+def test_snapshots_are_off_by_default_and_the_log_stays_scalar():
+    df = simulate(Tank(), Snapping(30.0), _scenario())
+    assert df.attrs["snapshots"] == []
+    assert df.attrs["snapshot_stride"] == 0
+    assert "y_pred" not in df.columns
+
+
+def test_snapshots_are_captured_on_the_requested_stride():
+    scenario = _scenario()
+    df = simulate(Tank(), Snapping(30.0), scenario, snapshot_stride=25)
+
+    snaps = df.attrs["snapshots"]
+    assert len(snaps) == scenario.n_steps // 25          # no snapshot on the final row
+    assert [s["t"] for s in snaps] == [0.0, 25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 175.0]
+    assert snaps[0]["y_pred"].shape == (4,)
+
+
+def test_snapshots_do_not_disturb_the_metrics():
+    """Snapshots live in attrs, not in columns, so the metrics cannot see them
+    -- the same guarantee the diag_ prefix gives the scalar diagnostics."""
+    plain = summarize({"c": simulate(Tank(), ConstantController(30.0), _scenario())})
+    snapped = summarize(
+        {"c": simulate(Tank(), Snapping(30.0), _scenario(), snapshot_stride=10)}
+    )
+    cols = [c for c in plain.columns if not c.startswith("solve_ms")]
+    assert plain[cols].equals(snapped[cols])
+
+
+def test_a_controller_that_snapshots_nothing_costs_nothing():
+    df = simulate(Tank(), ConstantController(30.0), _scenario(), snapshot_stride=10)
+    assert df.attrs["snapshots"] == []
+
+
 def test_cascade_feedforward_and_pwm_publish_their_internal_signals():
     """The three controllers that had informative internals invisible in the log."""
     from process_control.controllers.cascade import CascadeController

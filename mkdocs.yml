@@ -127,6 +127,7 @@ nav:
       - concepts/metrics.md
       - concepts/tuning-rules.md
       - concepts/robustness.md
+      - concepts/mpc.md
   - Articles:
       - articles/index.md
       - articles/01-onoff-vs-pid.md
@@ -138,9 +139,13 @@ nav:
       - articles/07-cascade.md
       - articles/08-feedforward.md
       - articles/09-inverse-response.md
+      - articles/10-smith-predictor.md
+      - articles/11-mpc.md
   - API reference:
       - reference/index.md
       - reference/plants.md
+      - reference/models.md
       - reference/controllers.md
       - reference/harness.md
       - reference/tuning.md
+      - reference/solvers.md

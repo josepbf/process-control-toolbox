@@ -125,6 +125,116 @@ def plot_runs(
     return fig, axes
 
 
+def plot_horizon(
+    df: pd.DataFrame,
+    key: str = "y_pred",
+    u_key: str | None = "u_plan",
+    title: str = "",
+    y_label: str = "level y [%]",
+    u_label: str = "valve u [%]",
+    path: str | Path | None = None,
+    figsize: tuple[float, float] = (11.0, 7.0),
+    max_steps: int | None = None,
+):
+    """The receding-horizon fan: what the controller thought would happen.
+
+    Each stored snapshot is drawn forward from the sample it was made at, over
+    the trace of what actually happened. Where the fan hugs the trace the
+    internal model is good; where it peels away it is not, and the distance is
+    the model mismatch the controller was working with at that moment.
+
+    Needs a run made with ``simulate(..., snapshot_stride=n)`` -- the snapshots
+    live in ``df.attrs``, not in the columns, because a predicted trajectory
+    does not fit one row per sample.
+
+    ``max_steps`` draws only the first that-many samples of each prediction.
+    A prediction horizon long enough to cover the settling time (which is what
+    `LinearMPC` wants, having no terminal cost) is far longer than the part
+    anyone can read: every curve ends up flat on the setpoint and the fan
+    becomes a smear. Windowing the *drawing* changes nothing about the
+    controller.
+    """
+    snaps = df.attrs.get("snapshots") or []
+    if not snaps:
+        raise ValueError(
+            "this run carries no snapshots: pass snapshot_stride=n to simulate(), "
+            "and check the controller implements Controller.snapshot()"
+        )
+
+    show_u = u_key is not None and u_key in snaps[0]
+    if show_u:
+        fig, axes = plt.subplots(
+            2, 1, figsize=figsize, sharex=True, gridspec_kw={"height_ratios": [3, 2]}
+        )
+        ax_y, ax_u = axes
+    else:
+        fig, ax_y = plt.subplots(figsize=(figsize[0], figsize[1] * 0.7))
+        axes, ax_u = (ax_y,), None
+
+    t = df["t"].to_numpy(float)
+    ax_y.plot(t, signal(df, "sp")[:, 0], "k--", lw=1.4, label="setpoint", zorder=1)
+    ax_y.plot(t, signal(df, "y")[:, 0], lw=1.8, color="k", label="what happened", zorder=3)
+    if ax_u is not None:
+        ax_u.step(t, signal(df, "u")[:, 0], where="post", lw=1.6, color="k", zorder=3)
+
+    dt = float(df.attrs.get("dt", 1.0))
+    for i, snap in enumerate(snaps):
+        pred = np.atleast_2d(np.asarray(snap[key], dtype=float))
+        if pred.shape[0] == 1 and pred.shape[1] > 1:
+            pred = pred.T
+        if max_steps is not None:
+            pred = pred[:max_steps]
+        n = pred.shape[0]
+        # Snapshots may carry their own horizon clock; fall back to the sample
+        # time so a controller that publishes only the trajectory still plots.
+        th = (
+            np.asarray(snap["t_horizon"], float)[:n]
+            if "t_horizon" in snap
+            else snap["t"] + np.arange(1, n + 1) * dt
+        )
+        label = "predicted" if i == 0 else None
+        ax_y.plot(th, pred[:, 0], lw=1.0, alpha=0.75, color="tab:orange", label=label)
+        ax_y.plot(snap["t"], pred[0, 0], ".", ms=4, color="tab:orange")
+        if ax_u is not None:
+            plan = np.atleast_2d(np.asarray(snap[u_key], dtype=float))
+            if plan.shape[0] == 1 and plan.shape[1] > 1:
+                plan = plan.T
+            if max_steps is not None:
+                plan = plan[:max_steps]
+            ax_u.step(
+                th[: plan.shape[0]], plan[:, 0], where="post",
+                lw=1.0, alpha=0.75, color="tab:orange",
+            )
+
+    for lim, name in ((df.attrs.get("y_min"), "y_min"), (df.attrs.get("y_max"), "y_max")):
+        if lim is not None:
+            ax_y.axhline(lim[0], color="crimson", ls=":", lw=1.2)
+            ax_y.text(t[-1], lim[0], f" {name}", color="crimson", va="center", fontsize=8)
+    if ax_u is not None:
+        for lim in (df.attrs.get("u_min"), df.attrs.get("u_max")):
+            if lim is not None and np.isfinite(lim[0]):
+                ax_u.axhline(lim[0], color="grey", ls=":", lw=1.2)
+
+    ax_y.set_ylabel(y_label)
+    ax_y.legend(loc="best", fontsize=9)
+    ax_y.grid(alpha=0.3)
+    ax_y.set_xlim(t[0], t[-1])
+    if ax_u is not None:
+        ax_u.set_ylabel(u_label)
+        ax_u.grid(alpha=0.3)
+    axes[-1].set_xlabel("time [s]")
+
+    if title:
+        fig.suptitle(title, fontsize=12)
+    fig.tight_layout()
+
+    if path is not None:
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(path, dpi=150)
+    return fig, axes
+
+
 def save_table(table: pd.DataFrame, path: str | Path) -> Path:
     """Write a metric table to CSV, creating the results directory if needed."""
     path = Path(path)

@@ -11,7 +11,9 @@ code.
 | `PIDController` | positional / ISA ideal | back-calculation anti-windup, filtered derivative |
 | `VelocityPIDController` | incremental | structural anti-windup, bumpless transfer |
 | `CascadeController` | primary/secondary pair | the primary's output is the secondary's setpoint |
-| `FeedforwardPID` | feedback + lead-lag | the only one declaring `uses_measured_disturbance` |
+| `FeedforwardPID` | feedback + lead-lag | declares `uses_measured_disturbance` |
+| `SmithPredictor` | PI around a dead-time-free internal model | the first controller carrying a model |
+| `LinearMPC` | condensed QP in the move increments | constraints in the control law; declares `uses_preview` |
 
 ---
 
@@ -60,3 +62,15 @@ code.
 ## LeadLag
 
 ::: process_control.controllers.feedforward.LeadLag
+
+---
+
+## SmithPredictor
+
+::: process_control.controllers.smith.SmithPredictor
+
+---
+
+## LinearMPC
+
+::: process_control.controllers.mpc.LinearMPC

@@ -358,6 +358,91 @@ SISO loop before loop interaction is layered on top.
 
 ---
 
+## The Smith predictor: dead-time compensation, and the price of the model
+
+`experiments/exp10_smith_predictor.py`
+
+A Smith predictor closes the PI around the internal model's *undelayed*
+prediction and uses the measurement only to correct the model. With a perfect
+model it is worth **1.66x on IAE at theta/tau = 0.25, growing to 2.0x at
+theta/tau >= 1**, for 2.7x the valve travel.
+
+| theta/tau | IAE, relative to the SIMC PI at the same ratio |
+|---:|---:|
+| 0.10 | 0.76x |
+| 0.25 | 0.60x |
+| 0.50 | 0.54x |
+| 1.00 | 0.50x |
+| 2.00 | 0.49x |
+| 4.00 | 0.49x |
+
+The benefit *grows* where feedback is worst and then saturates near 2x. That
+shape is the result: it is what a dead-time compensator is supposed to do, and
+it is not something any tuning rule can deliver.
+
+**Where it loses, and it loses badly.** The same predictor believing theta is a
+third of its true value is **7x to 13x worse than the PI it replaced**, at every
+ratio, with 4585 units of valve travel against the PI's 64. The aggressive inner
+tuning is protected by a cancellation that holds only if the delay is right.
+
+Gain errors do not do this -- a 30 % error in K is a mild penalty. Delay errors
+do. And theta is usually the least well identified of the three FOPDT
+parameters, and drifts with throughput and fouling. The engineering conclusion
+is to tune the inner loop for the delay you might actually have, not the one you
+measured on a good day, and to keep `model_error` on a trend somebody looks at.
+
+---
+
+## MPC: what optimisation actually buys
+
+`experiments/exp11_mpc_constraints.py`
+
+**Unconstrained, it ties.** Tuned from the *same* FOPDT model by cited rules --
+SIMC (Skogestad 2003) for the PI, Shridhar & Cooper (1997) for the MPC -- the
+two land at IAE 1028.3 against 1028.7, a difference of 0.04 %. Two unrelated
+rules, two different control structures, one model, one answer. That coincidence
+is the strongest available evidence that both are implemented correctly.
+
+MPC gets there with 12 % *more* valve travel, so on the trade-off it is very
+slightly the worse controller. It does deliver a quarter of the PI's largest
+single move and a third of the overshoot, which is worth something on real
+hardware but is not what the optimiser was asked for.
+
+The move-suppression weight R brackets the PI in both directions -- 0.65x its
+IAE at R = 0.05, 1.9x at R = 100, crossing 1.0 almost exactly where the tuning
+rule lands. **"MPC beat the PI on IAE" is therefore a statement about a weight
+somebody chose, not about MPC.** An unconstrained MPC is a linear controller;
+`LinearMPC.linear_gain()` returns which one, and the QP uses zero iterations at
+every sample of that run.
+
+**Constrained, it does what a PI cannot.** Against a 50.5 % ceiling placed where
+the well-tuned PI's own 5.1 % overshoot crosses it:
+
+| | peak | violations | violation integral | TV_u | solve time |
+|---|---:|---:|---:|---:|---:|
+| SIMC PI | 51.03 % | 33 | 10.93 | 55.2 | 0.003 ms |
+| MPC + y_max | 50.50 % | 0 | 0.00 | 150.5 | 0.716 ms |
+
+MPC *rides* the limit rather than backing off it. The PI is not badly tuned --
+it simply has no representation of a limit it is not allowed to cross, and
+nothing in a PI's structure can express one. That is the entire structural
+difference, and it costs **2.7x the valve travel and ~230x the computation**.
+
+**What this does not show.** No nonlinear plant exists in the toolbox, so the
+case for nonlinear MPC has not been made and no solver framework was adopted for
+it. There is no terminal cost -- the stability argument is a horizon covering
+the settling time, which is the industrial DMC position. And nothing here
+contradicts finding 3: peak deviation at high theta/tau is still mostly physics.
+
+**Architecturally**, MPC arrived as one more `Controller`: `Plant` unchanged,
+`simulate()` one keyword richer and one branch poorer, zero new required
+dependencies. The QP is built here and solved by a dense active-set solver in
+numpy and scipy; only the numerical solve sits behind a boundary where an
+optional accelerator could go. That split is what keeps a suspicious result
+checkable.
+
+---
+
 ## Running summary: what the toolbox demonstrates
 
 1. **Tuning is a frontier, not an optimum.** Ten published PI rules on one
@@ -381,4 +466,16 @@ SISO loop before loop interaction is layered on top.
    robustness number is the one that breaches the alarm band. No single number
    is sufficient.
 5. **Everything costs valve travel.** Cascade 2.1x, feedforward 5.8x,
-   aggressive tuning 5.7x. Nothing in this repository is reported without it.
+   aggressive tuning 5.7x, Smith predictor 2.7x, MPC 2.7x. Nothing in this
+   repository is reported without it.
+6. **A model is leverage in both directions.** The Smith predictor is worth 2x
+   where feedback is worst and 10x *against* you when theta is wrong by a
+   factor of three. Everything a model-based controller gains, it gains on the
+   strength of the model being right -- and dead time is the parameter most
+   likely to be wrong.
+7. **Optimisation buys constraints, not tracking.** A properly tuned MPC ties a
+   properly tuned PI to 0.04 % when nothing binds, and its move weight spans
+   the PI in both directions. What it adds is a representation of a limit it
+   may not cross -- 33 violations to zero. That is a structural difference and
+   it is the only one; the tracking comparison is a tuning difference and is
+   available to both.

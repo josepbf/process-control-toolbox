@@ -52,6 +52,7 @@ def simulate(
     scenario: Scenario,
     seed: int | None = None,
     copy_plant: bool = True,
+    snapshot_stride: int = 0,
 ) -> pd.DataFrame:
     """Run one controller against one plant for one scenario.
 
@@ -60,6 +61,12 @@ def simulate(
     index suffix, e.g. ``y0``, ``y1``). Controllers that implement
     :meth:`Controller.diagnostics` add one ``diag_<name>`` column each. Run
     metadata lands in ``df.attrs``.
+
+    ``snapshot_stride`` turns on :meth:`Controller.snapshot`, calling it every
+    that-many samples and collecting the results in ``df.attrs["snapshots"]``.
+    Zero (the default) never calls it, so the log stays scalar. Snapshots are
+    for plotting one run -- ``df.attrs`` does not survive ``pd.concat`` and does
+    not reach a CSV, so the metrics never see them.
     """
     if copy_plant:
         plant = copy.deepcopy(plant)
@@ -76,7 +83,13 @@ def simulate(
     uses_d = getattr(controller, "uses_measured_disturbance", False)
     rng_d = np.random.default_rng(seed + 104729)
 
+    # Controllers that look ahead say so on the class, and the declaration is
+    # logged: preview is an information advantage, not a free convenience.
+    uses_preview = getattr(controller, "uses_preview", False)
+    n_preview = int(getattr(controller, "preview_horizon", 0)) if uses_preview else 0
+
     rows = []
+    snapshots: list[dict] = []
     u = np.zeros(plant.n_inputs)
     diag: dict[str, float] = {}
     for k in range(scenario.n_steps):
@@ -88,17 +101,42 @@ def simulate(
         if scenario.d_noise_std > 0:
             d_meas = d_meas + rng_d.normal(0.0, scenario.d_noise_std, size=d.shape)
 
-        t0 = perf_counter()
+        # One kwargs dict rather than one branch per capability flag, so the
+        # next flag is a line rather than another special case.
+        kwargs: dict = {}
         if uses_d:
-            u = controller.compute(y, sp, t, d=d_meas)
-        else:
-            u = controller.compute(y, sp, t)
+            kwargs["d"] = d_meas
+        if uses_preview:
+            # Assembled before the timer starts, deliberately: building the
+            # preview is the harness's work, not the controller's, and
+            # solve_ms_mean is a reported metric (fairness rule 5).
+            kwargs["sp_preview"] = np.array(
+                [np.atleast_1d(scenario.setpoint(t + j * dt)) for j in range(n_preview + 1)]
+            )
+
+        t0 = perf_counter()
+        u = controller.compute(y, sp, t, **kwargs)
         u = np.atleast_1d(np.asarray(u, dtype=float))
         solve_time = perf_counter() - t0
 
         # Internal signals the controller chooses to expose. Namespaced so they
         # can never collide with the y/u/d/sp columns the metrics select on.
-        diag = {f"diag_{k}": float(v) for k, v in controller.diagnostics().items()}
+        diag = {f"diag_{key}": float(v) for key, v in controller.diagnostics().items()}
+
+        # Also outside the timer: capturing a trajectory is logging, not control.
+        if snapshot_stride and k % snapshot_stride == 0:
+            snap = controller.snapshot()
+            if snap:
+                snapshots.append(
+                    {
+                        "k": k,
+                        "t": t,
+                        **{
+                            name: np.asarray(value, dtype=float).copy()
+                            for name, value in snap.items()
+                        },
+                    }
+                )
 
         mag, flag = _violation(y, plant.y_min, plant.y_max)
         rows.append(
@@ -147,6 +185,10 @@ def simulate(
             "dt": dt,
             "seed": seed,
             "uses_measured_disturbance": uses_d,
+            "uses_preview": uses_preview,
+            "preview_horizon": n_preview,
+            "snapshots": snapshots,
+            "snapshot_stride": snapshot_stride,
             "u_min": plant.u_min.tolist(),
             "u_max": plant.u_max.tolist(),
             "y_min": None if plant.y_min is None else plant.y_min.tolist(),
@@ -161,9 +203,10 @@ def run_all(
     controllers: dict[str, Controller],
     scenario: Scenario,
     seed: int | None = None,
+    snapshot_stride: int = 0,
 ) -> dict[str, pd.DataFrame]:
     """Run several controllers against an identical plant/scenario/seed."""
     return {
-        label: simulate(plant, ctrl, scenario, seed=seed)
+        label: simulate(plant, ctrl, scenario, seed=seed, snapshot_stride=snapshot_stride)
         for label, ctrl in controllers.items()
     }
