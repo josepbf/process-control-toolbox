@@ -15,9 +15,10 @@ Comparing control strategies is something the toolbox is *used for* — see
 
 **Status.** Five plants, eight controllers, thirteen PID tuning rules plus a
 cited MPC rule, relay auto-tuning, frequency-domain robustness analysis, and
-eleven reproducible experiments, with 234 tests. Dead-time compensation and
+eleven reproducible experiments, with 237 tests. Dead-time compensation and
 linear MPC have landed — the latter dependency-free, as one more `Controller`.
-The classical structural repertoire (selector, ratio, split-range) is next.
+System identification is next: every controller here is still handed a perfect
+model, and that is now the largest untested assumption in the repository.
 
 ## Documentation
 
@@ -117,7 +118,7 @@ process_control/
     analysis.py             Ms, gain and phase margin, analytic ultimate gain
     relay.py                Astrom-Hagglund relay auto-tuning
 experiments/              one script per reported result
-tests/                    pytest suite (234 tests)
+tests/                    pytest suite (237 tests)
 results/                  generated figures and CSVs (gitignored)
 docs/                     documentation site (MkDocs Material)
 tools/                    documentation asset build
@@ -201,13 +202,59 @@ the experiment that demonstrate it.
 | harness and metrics | closed-loop runner, scenarios, tracking/effort/constraint/computation metrics, plotting | done |
 | plants | FOPDT tank, integrating surge tank, series lags, inverse response, two-stage cascade | done |
 | controllers | ON/OFF, time-proportioning, PID (positional and velocity), cascade, feedforward | done |
-| dead-time compensation | Smith predictor, discrete internal model, Kalman observer | done |
-| model predictive control | linear MPC as a condensed QP, soft output constraints, preview | done |
 | tuning and analysis | thirteen named rules, half-rule reduction, Ms/GM/PM analysis, relay auto-tuning | done |
-| **dead-time compensation** | Smith predictor and variants; brings the discrete internal-model and observer utilities with it | next |
+| dead-time compensation | Smith predictor, discrete internal model, Kalman observer | done |
+| model predictive control | linear MPC as a condensed QP, soft output constraints, setpoint preview, cited tuning | done |
+| **system identification** | test design, reaction-curve and ARX estimators, validation, model-mismatch studies | next |
 | selector, ratio, split-range | the classical structural repertoire beyond cascade and feedforward | |
 | MIMO and interaction | quadruple tank, RGA pairing, decentralised control | |
-| model predictive control | *conditional* — added if it fits the `Controller` abstraction using the extension points in [ARCHITECTURE.md](ARCHITECTURE.md), not as a headline goal | |
 
-System identification is deliberately out of scope for now; the package will
-come back when there is something to put in it.
+MPC was listed as *conditional* — added only if it fitted the `Controller`
+abstraction rather than requiring the toolbox to be reshaped around it. That
+condition is discharged, and the accounting (one keyword on `simulate()`, a
+`uses_preview` flag following `uses_measured_disturbance`, no change to
+`Plant`) is written out in the [roadmap page](docs/roadmap.md), along with what
+MPC bought and what it did not.
+
+### System identification
+
+Identification was deliberately out of scope while nothing in the repository
+consumed a model it had not been given. That is no longer true. Thirteen tuning
+rules, the Smith predictor and `LinearMPC` all take FOPDT or state-space
+parameters, and today those are supplied by hand from a plant that happens to
+know its own answer. The only identification actually in the package is the
+relay experiment; the reaction-curve fit lives in a
+[tutorial snippet](docs/snippets/tutorial02.py), which is the wrong place for
+something three capabilities depend on.
+
+It also unblocks the question the results keep deferring. Every comparison so
+far gives each controller a *perfect* model, and both `FINDINGS.md` and
+[article 1](docs/articles/01-onoff-vs-pid.md) defer model mismatch as "a
+separate question, taken up when identification lands". Because each plant
+exposes its exact parameters, identification error can be *measured* rather
+than assumed — the accounting [article 4](docs/articles/04-relay-autotune.md)
+already does for the relay method, where Ku comes back 24 % low and Tu 7 % high.
+
+Planned as `process_control/sysid/`, under the same rules as everything else —
+a named and cited estimator, tests, and one experiment that reports the cases
+where it loses:
+
+* **test design** — open-loop step, doublet and PRBS, with the trade between
+  identification quality and how much the experiment upsets production reported
+  rather than hidden, as [`relay_autotune`](process_control/tuning/relay.py)
+  already reports it.
+* **estimators** — two- and three-point reaction-curve fits
+  (Ziegler–Nichols, Sundaresan–Krishnaswamy), least-squares ARX with an
+  explicit regressor matrix, and FOPDT reduction of a higher-order fit through
+  the `half_rule` that is already there.
+* **validation** — fit on one record, score on another; report a parameter
+  *distribution* over repeated noise realisations, not a single triple of
+  numbers that a single seed happened to produce.
+* **closing the loop** — push identified rather than true parameters through
+  the tuning rules, the Smith predictor's internal model and MPC's prediction
+  model, and report the cost of mismatch in both Ms and IAE. The expectation to
+  falsify is [tutorial 2](docs/tutorials/02-tuning-a-loop.md)'s: there, the
+  identification error made every loop *safer*, on one plant with one seed.
+
+The dependency-free position holds: least squares is `numpy.linalg.lstsq`, and
+nothing here needs an identification toolbox.

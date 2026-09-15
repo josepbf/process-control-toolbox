@@ -10,11 +10,10 @@ the experiment that demonstrate it.
 | controllers | ON/OFF, time-proportioning, PID (positional and velocity), cascade, feedforward | :material-check-circle: done |
 | tuning and analysis | thirteen named rules, half-rule reduction, M<sub>s</sub>/GM/PM analysis, relay auto-tuning | :material-check-circle: done |
 | dead-time compensation | Smith predictor, discrete internal model, Kalman observer | :material-check-circle: done |
+| **model predictive control** | linear MPC as a condensed QP, soft output constraints, setpoint preview, cited tuning | :material-check-circle: done — condition discharged, see below |
+| **system identification** | test design, reaction-curve and ARX estimators, validation, model-mismatch studies | next — see below |
 | selector, ratio, split-range | the classical structural repertoire beyond cascade and feedforward | |
 | MIMO and interaction | quadruple tank, RGA pairing, decentralised control | |
-| **model predictive control** | linear MPC as a condensed QP, soft output constraints, setpoint preview, cited tuning | :material-check-circle: done — condition discharged, see below |
-
-System identification is deliberately out of scope for now.
 
 ## What the existing experiments oblige the next ones to do
 
@@ -109,6 +108,53 @@ plant to need one**. Adding `do-mpc` before there is a process that defeats a
 single linear model would be a solution without a problem; the honest order is a
 pH loop or a jacketed reactor first, `LinearMPC` visibly failing on it, and only
 then CasADi.
+
+## On system identification
+
+Identification was out of scope while nothing here consumed a model it had not
+been given. That is no longer true. Thirteen tuning rules, the Smith predictor
+and `LinearMPC` all take FOPDT or state-space parameters, and today those are
+supplied by hand from a plant that happens to know its own answer. The only
+identification in the package is [`relay_autotune`](reference/tuning.md); the
+reaction-curve fit lives in a [tutorial](tutorials/02-tuning-a-loop.md) snippet,
+which is the wrong place for something three capabilities depend on.
+
+It is also the prerequisite the rest of this page keeps naming. Every
+comparison so far hands each controller a *perfect* model:
+[fairness](concepts/fairness.md) calls deliberate mismatch "a separate study,
+for when identification lands", and [article 1](articles/01-onoff-vs-pid.md)
+says the same. The plants expose their exact parameters, so the error can be
+**measured** rather than assumed — the accounting
+[article 4](articles/04-relay-autotune.md) already does for the relay method,
+which recovers K<sub>u</sub> 24 % low and T<sub>u</sub> 7 % high.
+
+Planned as `process_control/sysid/`, under the rules that apply to everything
+else — a named, cited estimator, tests, and one experiment that reports where
+it loses:
+
+- **test design** — open-loop step, doublet and PRBS, reporting the trade
+  between identification quality and how much the experiment upsets production,
+  the way the relay amplitude already does.
+- **estimators** — two- and three-point reaction-curve fits (Ziegler–Nichols,
+  Sundaresan–Krishnaswamy), least-squares ARX with an explicit regressor
+  matrix, and FOPDT reduction of a higher-order fit through the existing
+  `half_rule`.
+- **validation** — fit on one record, score on another; report a parameter
+  *distribution* over noise realisations rather than the triple one seed
+  produced.
+- **closing the loop** — push identified rather than true parameters through
+  the tuning rules, the Smith predictor's internal model and MPC's prediction
+  model, and report the cost in M<sub>s</sub> and in IAE.
+
+The expectation to falsify is [tutorial 2](tutorials/02-tuning-a-loop.md)'s:
+there, the identification error made every loop *safer* — M<sub>s</sub> on the
+true plant came out below M<sub>s</sub> on the identified model in every row.
+That was one plant, one seed, and a plant whose structure the FOPDT form
+matches exactly. A sweep over seeds and over `SeriesTanks`, where it does not,
+is the honest test, and a result that mismatch is *benign* would be as
+publishable here as one that it is not.
+
+Dependency-free still holds: least squares is `numpy.linalg.lstsq`.
 
 ## Contributing a result
 
